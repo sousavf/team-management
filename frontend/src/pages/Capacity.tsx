@@ -259,7 +259,7 @@ const Capacity: React.FC = () => {
               </tr>
             </thead>
             <tbody>
-              {users.filter(user => user.role !== 'ADMIN').map((user) => {
+              {users.filter(user => !['ADMIN', 'MANAGER', 'VIEW_ONLY'].includes(user.role)).map((user) => {
                 const isCurrentUser = state.user?.id === user.id;
                 return (
                   <tr key={user.id} className={isCurrentUser ? 'bg-blue-50 border-l-4 border-blue-500' : ''}>
