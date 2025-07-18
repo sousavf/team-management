@@ -115,7 +115,7 @@ async function seed() {
         reason: 'Medical appointment'
       },
       {
-        userId: users[2].id,
+        userId: users[0].id,
         startDate: addWeeks(currentWeek, 3),
         endDate: addWeeks(currentWeek, 3),
         type: 'OTHER' as const,
