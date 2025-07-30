@@ -19,7 +19,7 @@
 import React, { useState, useEffect } from 'react';
 import { User, TimeOffRequest } from '../types';
 import { userApi, timeOffApi } from '../utils/api';
-import { format, addDays, startOfWeek, endOfWeek, isWeekend, parseISO, isWithinInterval } from 'date-fns';
+import { format, addDays, startOfWeek, endOfWeek, isWeekend, parseISO, isWithinInterval, isToday } from 'date-fns';
 import { useAuth } from '../context/AuthContext';
 import toast from 'react-hot-toast';
 import { CalendarDaysIcon, ChevronLeftIcon, ChevronRightIcon } from '@heroicons/react/24/outline';
@@ -218,7 +218,11 @@ const HolidayCalendar: React.FC = () => {
                   <div
                     key={index}
                     className={`w-8 h-8 flex items-center justify-center text-xs font-medium ${
-                      isWeekend(date) ? 'text-gray-400' : 'text-gray-700'
+                      isToday(date) 
+                        ? 'bg-yellow-100 text-yellow-800 rounded-md' 
+                        : isWeekend(date) 
+                        ? 'text-gray-400' 
+                        : 'text-gray-700'
                     }`}
                   >
                     <div className="text-center">
@@ -237,9 +241,9 @@ const HolidayCalendar: React.FC = () => {
                 {dates.map((date, index) => {
                   const showMonth = index === 0 || format(date, 'dd') === '01';
                   return (
-                    <div key={index} className="w-8 h-4 flex items-center justify-center">
+                    <div key={index} className={`w-8 h-4 flex items-center justify-center ${isToday(date) ? 'bg-yellow-100 rounded-md' : ''}`}>
                       {showMonth && (
-                        <div className="text-xs font-medium text-gray-500">
+                        <div className={`text-xs font-medium ${isToday(date) ? 'text-yellow-800' : 'text-gray-500'}`}>
                           {format(date, 'MMM')}
                         </div>
                       )}
@@ -265,7 +269,9 @@ const HolidayCalendar: React.FC = () => {
                     return (
                       <div
                         key={index}
-                        className={`w-8 h-8 border rounded ${squareColor} cursor-pointer hover:opacity-80 transition-opacity`}
+                        className={`w-8 h-8 border rounded ${squareColor} cursor-pointer hover:opacity-80 transition-opacity ${
+                          isToday(date) ? 'ring-2 ring-yellow-400 ring-opacity-60' : ''
+                        }`}
                         {...(state.user?.role === 'ADMIN' || state.user?.role === 'MANAGER' ? { title: tooltip } : {})}
                       >
                         {dayInfo.timeOff && (
