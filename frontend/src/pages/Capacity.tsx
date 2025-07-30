@@ -17,7 +17,7 @@
  */
 
 import React, { useState, useEffect } from 'react';
-import { Allocation, User, AllocationUpdate } from '../types';
+import { Allocation, User, AllocationUpdate, JiraTicketsResponse, UserJiraTickets } from '../types';
 import { capacityApi, userApi } from '../utils/api';
 import { format, startOfWeek, addWeeks, parseISO } from 'date-fns';
 import { useAuth } from '../context/AuthContext';
@@ -28,6 +28,8 @@ const Capacity: React.FC = () => {
   const { state } = useAuth();
   const [allocations, setAllocations] = useState<Allocation[]>([]);
   const [users, setUsers] = useState<User[]>([]);
+  const [jiraTickets, setJiraTickets] = useState<UserJiraTickets[]>([]);
+  const [jiraEnabled, setJiraEnabled] = useState(false);
   const [loading, setLoading] = useState(true);
   const [editingCell, setEditingCell] = useState<string | null>(null);
   const [editValues, setEditValues] = useState<AllocationUpdate>({
@@ -46,7 +48,16 @@ const Capacity: React.FC = () => {
 
   useEffect(() => {
     fetchData();
+    fetchJiraTickets();
   }, [currentWeek, weeks]);
+
+  useEffect(() => {
+    const jiraInterval = setInterval(() => {
+      fetchJiraTickets();
+    }, 30000); // Refresh JIRA tickets every 30 seconds
+
+    return () => clearInterval(jiraInterval);
+  }, []);
 
   const fetchData = async () => {
     try {
@@ -68,8 +79,30 @@ const Capacity: React.FC = () => {
     }
   };
 
+  const fetchJiraTickets = async () => {
+    try {
+      const response = await capacityApi.getJiraTickets();
+      const data: JiraTicketsResponse = response.data;
+      setJiraEnabled(data.enabled);
+      setJiraTickets(data.userTickets);
+    } catch (error) {
+      console.error('Failed to load JIRA tickets:', error);
+      setJiraEnabled(false);
+      setJiraTickets([]);
+    }
+  };
+
   const getAllocation = (userId: string, weekStart: string) => {
     return allocations.find(a => a.userId === userId && a.weekStartFormatted === weekStart);
+  };
+
+  const getUserJiraTickets = (userId: string) => {
+    return jiraTickets.find(ut => ut.userId === userId)?.tickets || [];
+  };
+
+  const isCurrentWeek = (weekStart: string) => {
+    const currentWeekStart = format(startOfWeek(new Date(), { weekStartsOn: 1 }), 'yyyy-MM-dd');
+    return weekStart === currentWeekStart;
   };
 
   const canEdit = () => {
@@ -446,11 +479,51 @@ const Capacity: React.FC = () => {
                                     <div className="text-amber-700">{allocation.weeklyPriority}</div>
                                   </div>
                                 )}
+                                {jiraEnabled && isCurrentWeek(weekStart) && getUserJiraTickets(user.id).length > 0 && (
+                                  <div className="mt-2 px-2 py-1 bg-blue-50 border border-blue-200 rounded text-xs">
+                                    <div className="font-medium text-blue-800 mb-1">In Progress:</div>
+                                    <div className="space-y-1">
+                                      {getUserJiraTickets(user.id).map((ticket, index) => (
+                                        <div key={index}>
+                                          <a
+                                            href={ticket.url}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="text-blue-600 hover:text-blue-800 underline font-mono"
+                                            title={ticket.summary}
+                                          >
+                                            {ticket.key}
+                                          </a>
+                                        </div>
+                                      ))}
+                                    </div>
+                                  </div>
+                                )}
                               </div>
                             ) : (
                               <div className="text-gray-400">
                                 <div className="text-lg">0%</div>
                                 <div className="text-xs">Not allocated</div>
+                                {jiraEnabled && isCurrentWeek(weekStart) && getUserJiraTickets(user.id).length > 0 && (
+                                  <div className="mt-2 px-2 py-1 bg-blue-50 border border-blue-200 rounded text-xs">
+                                    <div className="font-medium text-blue-800 mb-1">In Progress:</div>
+                                    <div className="space-y-1">
+                                      {getUserJiraTickets(user.id).map((ticket, index) => (
+                                        <div key={index}>
+                                          <a
+                                            href={ticket.url}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="text-blue-600 hover:text-blue-800 underline font-mono"
+                                            title={ticket.summary}
+                                          >
+                                            {ticket.key}
+                                          </a>
+                                        </div>
+                                      ))}
+                                    </div>
+                                  </div>
+                                )}
                               </div>
                             )}
                             {canEdit() && (

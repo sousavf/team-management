@@ -25,6 +25,10 @@ services:
       PORT: 3501
       NODE_ENV: production
       PACE_FACTOR: 0.8
+      JIRA_URL: "https://your-company.atlassian.net"
+      JIRA_EMAIL: "your-email@company.com"
+      JIRA_API_TOKEN: "your-jira-api-token"
+      JIRA_POLL_INTERVAL_SECONDS: 300
     ports:
       - "3501:3501"
     depends_on:

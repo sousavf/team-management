@@ -121,3 +121,22 @@ export interface TimeOffRequestCreate {
   type: 'VACATION' | 'SICK_LEAVE' | 'OTHER';
   reason?: string;
 }
+
+export interface JiraTicket {
+  key: string;
+  summary: string;
+  url: string;
+}
+
+export interface UserJiraTickets {
+  userId: string;
+  name: string;
+  email: string;
+  tickets: JiraTicket[];
+}
+
+export interface JiraTicketsResponse {
+  enabled: boolean;
+  message?: string;
+  userTickets: UserJiraTickets[];
+}

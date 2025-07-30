@@ -72,6 +72,7 @@ export const userApi = {
 export const capacityApi = {
   getAllocations: (params?: any) => api.get('/capacity/allocations', { params }),
   getTeamOverview: (params?: any) => api.get('/capacity/team-overview', { params }),
+  getJiraTickets: () => api.get('/capacity/jira-tickets'),
   updateAllocation: (userId: string, weekStart: string, data: any) =>
     api.put(`/capacity/allocations/${userId}/${weekStart}`, data),
   copyFromPreviousWeek: (weekStart: string) =>
