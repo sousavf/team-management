@@ -466,25 +466,17 @@ export const getJiraTickets = async (req: AuthRequest, res: Response) => {
       }
     });
 
-    const userTickets = users.map(user => {
-      const tickets = jiraService.getTicketsForUser(user.email);
-      console.log(`User ${user.email} tickets from service:`, JSON.stringify(tickets, null, 2));
-      
-      return {
-        userId: user.id,
-        name: user.name,
-        email: user.email,
-        tickets: tickets.map(ticket => {
-          console.log(`Processing ticket ${ticket.key}, issueType: ${ticket.issueType}`);
-          return {
-            key: ticket.key,
-            summary: ticket.summary,
-            url: jiraService.getJiraTicketUrl(ticket.key),
-            issueType: ticket.issueType
-          };
-        })
-      };
-    });
+    const userTickets = users.map(user => ({
+      userId: user.id,
+      name: user.name,
+      email: user.email,
+      tickets: jiraService.getTicketsForUser(user.email).map(ticket => ({
+        key: ticket.key,
+        summary: ticket.summary,
+        url: jiraService.getJiraTicketUrl(ticket.key),
+        issueType: ticket.issueType
+      }))
+    }));
 
     res.json({
       enabled: true,
@@ -492,6 +484,98 @@ export const getJiraTickets = async (req: AuthRequest, res: Response) => {
     });
   } catch (error) {
     console.error('Error getting JIRA tickets:', error);
+    res.status(500).json({ error: 'Server error' });
+  }
+};
+
+export const getTodoCapacityAggregation = async (req: AuthRequest, res: Response) => {
+  try {
+    // Get current week
+    const currentWeek = startOfWeek(new Date(), { weekStartsOn: 1 });
+    
+    // Get all allocations for current week with TODO priorities
+    const allocations = await prisma.allocation.findMany({
+      where: {
+        weekStart: currentWeek,
+        weeklyPriority: {
+          not: null
+        },
+        user: {
+          role: {
+            notIn: ['ADMIN', 'MANAGER', 'VIEW_ONLY']
+          }
+        }
+      },
+      include: {
+        user: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            role: true
+          }
+        }
+      }
+    });
+
+    // Group allocations by TODO priority (case insensitive)
+    const todoAggregation = new Map<string, {
+      priority: string;
+      backendHours: number;
+      frontendHours: number;
+      totalHours: number;
+      userCount: number;
+      users: string[];
+    }>();
+
+    for (const allocation of allocations) {
+      if (!allocation.weeklyPriority?.trim()) continue;
+      
+      const priority = allocation.weeklyPriority.trim();
+      const priorityKey = priority.toLowerCase();
+      
+      // Calculate working days and hours for this user
+      const workingDays = await calculateWorkingDays(allocation.userId, currentWeek);
+      const maxHours = workingDays * HOURS_PER_DAY * DEFAULT_PACE_FACTOR;
+      
+      // Calculate backend and frontend hours
+      const backendHours = maxHours * (allocation.backendDevelopment / 100);
+      const frontendHours = maxHours * (allocation.frontendDevelopment / 100);
+      const totalAllocatedHours = backendHours + frontendHours;
+
+      if (!todoAggregation.has(priorityKey)) {
+        todoAggregation.set(priorityKey, {
+          priority: priority, // Use original case for display
+          backendHours: 0,
+          frontendHours: 0,
+          totalHours: 0,
+          userCount: 0,
+          users: []
+        });
+      }
+
+      const existing = todoAggregation.get(priorityKey)!;
+      existing.backendHours += backendHours;
+      existing.frontendHours += frontendHours;
+      existing.totalHours += totalAllocatedHours;
+      
+      if (!existing.users.includes(allocation.user.name)) {
+        existing.users.push(allocation.user.name);
+        existing.userCount++;
+      }
+    }
+
+    // Convert to array and sort by total hours descending
+    const result = Array.from(todoAggregation.values())
+      .sort((a, b) => b.totalHours - a.totalHours);
+
+    res.json({
+      weekStart: format(currentWeek, 'yyyy-MM-dd'),
+      totalAllocations: allocations.length,
+      todoCapacities: result
+    });
+  } catch (error) {
+    console.error('Error getting TODO capacity aggregation:', error);
     res.status(500).json({ error: 'Server error' });
   }
 };

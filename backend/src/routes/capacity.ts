@@ -23,13 +23,15 @@ import {
   updateAllocation,
   getTeamCapacityOverview,
   copyFromPreviousWeek,
-  getJiraTickets
+  getJiraTickets,
+  getTodoCapacityAggregation
 } from '../controllers/capacityController';
 
 const router = express.Router();
 
 router.get('/allocations', authenticate, getAllocations);
 router.get('/team-overview', getTeamCapacityOverview); // Public access for dashboard
+router.get('/todo-capacity', authenticate, getTodoCapacityAggregation);
 router.get('/jira-tickets', authenticate, getJiraTickets);
 router.put('/allocations/:userId/:weekStart', authenticate, authorize('ADMIN', 'MANAGER'), updateAllocation);
 router.post('/copy-from-previous-week', authenticate, authorize('ADMIN', 'MANAGER'), copyFromPreviousWeek);

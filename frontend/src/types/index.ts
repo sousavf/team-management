@@ -141,3 +141,18 @@ export interface JiraTicketsResponse {
   message?: string;
   userTickets: UserJiraTickets[];
 }
+
+export interface TodoCapacityItem {
+  priority: string;
+  backendHours: number;
+  frontendHours: number;
+  totalHours: number;
+  userCount: number;
+  users: string[];
+}
+
+export interface TodoCapacityAggregation {
+  weekStart: string;
+  totalAllocations: number;
+  todoCapacities: TodoCapacityItem[];
+}
