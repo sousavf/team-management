@@ -22,6 +22,7 @@ export interface JiraTicket {
   key: string;
   summary: string;
   assigneeEmail: string;
+  issueType: string;
 }
 
 class JiraService {
@@ -74,11 +75,11 @@ class JiraService {
     }
 
     try {
-      const jql = 'status = "Development in progress" OR status = "Code review in progress"';
+      const jql = 'status = "Development in progress" OR status = "Development in progress - ST" OR status = "Code review in progress"';
       
       const searchResults = await this.client.issueSearch.searchForIssuesUsingJql({
         jql,
-        fields: ['key', 'summary', 'assignee'],
+        fields: ['key', 'summary', 'assignee', 'issuetype'],
         maxResults: 100
       });
 
@@ -87,10 +88,25 @@ class JiraService {
       if (searchResults.issues) {
         for (const issue of searchResults.issues) {
           if (issue.fields?.assignee?.emailAddress) {
+            
+            // Try different ways to access issue type based on JIRA API variations
+            let issueType = 'Unknown';
+            
+            if (issue.fields.issuetype) {
+              if (typeof issue.fields.issuetype === 'string') {
+                issueType = issue.fields.issuetype;
+              } else if (issue.fields.issuetype.name) {
+                issueType = issue.fields.issuetype.name;
+              } else if ((issue.fields.issuetype as any).value) {
+                issueType = (issue.fields.issuetype as any).value;
+              }
+            }
+
             const ticket: JiraTicket = {
               key: issue.key!,
               summary: issue.fields.summary || '',
-              assigneeEmail: issue.fields.assignee.emailAddress
+              assigneeEmail: issue.fields.assignee.emailAddress,
+              issueType: issueType
             };
 
             const userTickets = ticketsByEmail.get(ticket.assigneeEmail) || [];

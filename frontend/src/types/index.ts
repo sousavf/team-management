@@ -126,6 +126,7 @@ export interface JiraTicket {
   key: string;
   summary: string;
   url: string;
+  issueType: string;
 }
 
 export interface UserJiraTickets {

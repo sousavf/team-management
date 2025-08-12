@@ -466,16 +466,25 @@ export const getJiraTickets = async (req: AuthRequest, res: Response) => {
       }
     });
 
-    const userTickets = users.map(user => ({
-      userId: user.id,
-      name: user.name,
-      email: user.email,
-      tickets: jiraService.getTicketsForUser(user.email).map(ticket => ({
-        key: ticket.key,
-        summary: ticket.summary,
-        url: jiraService.getJiraTicketUrl(ticket.key)
-      }))
-    }));
+    const userTickets = users.map(user => {
+      const tickets = jiraService.getTicketsForUser(user.email);
+      console.log(`User ${user.email} tickets from service:`, JSON.stringify(tickets, null, 2));
+      
+      return {
+        userId: user.id,
+        name: user.name,
+        email: user.email,
+        tickets: tickets.map(ticket => {
+          console.log(`Processing ticket ${ticket.key}, issueType: ${ticket.issueType}`);
+          return {
+            key: ticket.key,
+            summary: ticket.summary,
+            url: jiraService.getJiraTicketUrl(ticket.key),
+            issueType: ticket.issueType
+          };
+        })
+      };
+    });
 
     res.json({
       enabled: true,
