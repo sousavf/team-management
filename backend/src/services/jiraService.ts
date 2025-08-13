@@ -23,6 +23,7 @@ export interface JiraTicket {
   summary: string;
   assigneeEmail: string;
   issueType: string;
+  sprint: string;
 }
 
 class JiraService {
@@ -79,7 +80,7 @@ class JiraService {
       
       const searchResults = await this.client.issueSearch.searchForIssuesUsingJql({
         jql,
-        fields: ['key', 'summary', 'assignee', 'issuetype'],
+        fields: ['key', 'summary', 'assignee', 'issuetype', 'customfield_10020', 'sprint'],
         maxResults: 100
       });
 
@@ -102,11 +103,36 @@ class JiraService {
               }
             }
 
+            // Extract sprint information
+            let sprint = 'No Sprint';
+            
+            // Try different ways to access sprint field
+            const sprintField = (issue.fields as any).customfield_10020 || (issue.fields as any).sprint;
+            
+            if (sprintField) {
+              if (Array.isArray(sprintField) && sprintField.length > 0) {
+                // Sprint is usually an array, get the latest active sprint
+                const activeSprint = sprintField[sprintField.length - 1];
+                if (activeSprint && activeSprint.name) {
+                  sprint = activeSprint.name;
+                } else if (typeof activeSprint === 'string') {
+                  // Sometimes sprint is just a string
+                  const sprintMatch = activeSprint.match(/name=([^,\]]+)/);
+                  sprint = sprintMatch ? sprintMatch[1] : 'Unknown Sprint';
+                }
+              } else if (typeof sprintField === 'string') {
+                sprint = sprintField;
+              } else if (sprintField.name) {
+                sprint = sprintField.name;
+              }
+            }
+
             const ticket: JiraTicket = {
               key: issue.key!,
               summary: issue.fields.summary || '',
               assigneeEmail: issue.fields.assignee.emailAddress,
-              issueType: issueType
+              issueType: issueType,
+              sprint: sprint
             };
 
             const userTickets = ticketsByEmail.get(ticket.assigneeEmail) || [];

@@ -474,7 +474,8 @@ export const getJiraTickets = async (req: AuthRequest, res: Response) => {
         key: ticket.key,
         summary: ticket.summary,
         url: jiraService.getJiraTicketUrl(ticket.key),
-        issueType: ticket.issueType
+        issueType: ticket.issueType,
+        sprint: ticket.sprint
       }))
     }));
 
