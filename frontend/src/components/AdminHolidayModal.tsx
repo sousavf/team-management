@@ -19,6 +19,7 @@
 import React, { useState, useEffect } from 'react';
 import { User } from '../types';
 import { timeOffApi, userApi } from '../utils/api';
+import { useAuth } from '../context/AuthContext';
 import toast from 'react-hot-toast';
 import { XMarkIcon } from '@heroicons/react/24/outline';
 
@@ -29,6 +30,7 @@ interface AdminHolidayModalProps {
 }
 
 const AdminHolidayModal: React.FC<AdminHolidayModalProps> = ({ isOpen, onClose, onSuccess }) => {
+  const { state } = useAuth();
   const [users, setUsers] = useState<User[]>([]);
   const [selectedUserIds, setSelectedUserIds] = useState<string[]>([]);
   const [formData, setFormData] = useState({
@@ -49,9 +51,23 @@ const AdminHolidayModal: React.FC<AdminHolidayModalProps> = ({ isOpen, onClose, 
   const fetchUsers = async () => {
     try {
       const response = await userApi.getUsers();
-      // Filter out admin users
-      const nonAdminUsers = response.data.filter((user: User) => user.role !== 'ADMIN');
-      setUsers(nonAdminUsers);
+      let filteredUsers: User[] = [];
+      
+      // Role-based user filtering for team holiday creation
+      const currentUserRole = state.user?.role;
+      
+      if (currentUserRole === 'ADMIN') {
+        // ADMINs can create holidays for anyone except other ADMINs
+        filteredUsers = response.data.filter((user: User) => user.role !== 'ADMIN');
+      } else if (currentUserRole === 'MANAGER') {
+        // MANAGERs can only create holidays for DEVELOPERs
+        filteredUsers = response.data.filter((user: User) => user.role === 'DEVELOPER');
+      } else if (currentUserRole === 'QA_MANAGER') {
+        // QA_MANAGERs can only create holidays for TESTERs
+        filteredUsers = response.data.filter((user: User) => user.role === 'TESTER');
+      }
+      
+      setUsers(filteredUsers);
     } catch (error) {
       toast.error('Failed to load users');
     }
@@ -121,7 +137,11 @@ const AdminHolidayModal: React.FC<AdminHolidayModalProps> = ({ isOpen, onClose, 
     <div className="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center z-50">
       <div className="bg-white rounded-lg p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
         <div className="flex justify-between items-center mb-4">
-          <h2 className="text-lg font-bold">Create Team Holiday</h2>
+          <h2 className="text-lg font-bold">
+            {state.user?.role === 'ADMIN' ? 'Create Team Holiday' : 
+             state.user?.role === 'MANAGER' ? 'Create Developer Holiday' : 
+             'Create Tester Holiday'}
+          </h2>
           <button
             onClick={handleClose}
             className="text-gray-400 hover:text-gray-600"

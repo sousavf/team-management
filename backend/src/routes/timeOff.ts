@@ -107,8 +107,8 @@ router.get('/calendar', authenticate, async (req: AuthRequest, res) => {
 
 router.get('/', authenticate, getTimeOffRequests);
 router.post('/', authenticate, createTimeOffRequestValidation, createTimeOffRequest);
-router.post('/admin/create-holiday', authenticate, authorize('ADMIN'), createAdminHolidayValidation, createAdminHoliday);
-router.put('/:id', authenticate, authorize('ADMIN', 'MANAGER'), updateTimeOffRequest);
+router.post('/admin/create-holiday', authenticate, authorize('ADMIN', 'MANAGER', 'QA_MANAGER'), createAdminHolidayValidation, createAdminHoliday);
+router.put('/:id', authenticate, authorize('ADMIN', 'MANAGER', 'QA_MANAGER'), updateTimeOffRequest);
 router.post('/:id/cancel', authenticate, cancelTimeOffRequest);
 router.delete('/:id', authenticate, deleteTimeOffRequest);
 

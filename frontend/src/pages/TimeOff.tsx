@@ -139,7 +139,7 @@ const TimeOff: React.FC = () => {
   };
 
   const canApprove = () => {
-    return ['ADMIN', 'MANAGER'].includes(state.user?.role || '');
+    return ['ADMIN', 'MANAGER', 'QA_MANAGER'].includes(state.user?.role || '');
   };
 
   const canCreateTimeOff = () => {
@@ -157,8 +157,8 @@ const TimeOff: React.FC = () => {
       return true;
     }
     
-    // Admins and managers can delete any pending request
-    if (['ADMIN', 'MANAGER'].includes(state.user?.role || '') && request.status === 'PENDING') {
+    // Admins, managers, and QA managers can delete any pending request
+    if (['ADMIN', 'MANAGER', 'QA_MANAGER'].includes(state.user?.role || '') && request.status === 'PENDING') {
       return true;
     }
     
@@ -167,8 +167,8 @@ const TimeOff: React.FC = () => {
       return true;
     }
     
-    // Managers can delete their own approved requests
-    if (state.user?.role === 'MANAGER' && request.userId === state.user?.id && request.status === 'APPROVED') {
+    // Managers and QA managers can delete their own approved requests
+    if (['MANAGER', 'QA_MANAGER'].includes(state.user?.role || '') && request.userId === state.user?.id && request.status === 'APPROVED') {
       return true;
     }
     
@@ -189,6 +189,10 @@ const TimeOff: React.FC = () => {
 
   const isAdmin = () => {
     return state.user?.role === 'ADMIN';
+  };
+
+  const canCreateTeamHoliday = () => {
+    return ['ADMIN', 'MANAGER', 'QA_MANAGER'].includes(state.user?.role || '');
   };
 
   const getStatusBadge = (status: string) => {
@@ -217,7 +221,7 @@ const TimeOff: React.FC = () => {
     }
   };
 
-  const getTypeColor = (type: string) => {
+  const getTypeColor = (type: string | undefined) => {
     switch (type) {
       case 'VACATION':
         return 'bg-blue-100 text-blue-800';
@@ -228,7 +232,8 @@ const TimeOff: React.FC = () => {
     }
   };
 
-  const formatType = (type: string) => {
+  const formatType = (type: string | undefined) => {
+    if (!type) return 'Unknown';
     return type.replace('_', ' ').toLowerCase().replace(/\b\w/g, l => l.toUpperCase());
   };
 
@@ -245,7 +250,7 @@ const TimeOff: React.FC = () => {
       <div className="flex justify-between items-center">
         <h1 className="text-2xl font-bold text-gray-900">Time Off Management</h1>
         <div className="flex space-x-3">
-          {isAdmin() && (
+          {canCreateTeamHoliday() && (
             <button
               onClick={() => setShowAdminHolidayModal(true)}
               className="btn-secondary"

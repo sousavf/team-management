@@ -63,8 +63,8 @@ const Navbar: React.FC = () => {
   if (state.user) {
     navigationItems = [...navigationItems, ...authenticatedNavigationItems];
     
-    // Add Time Off for non-VIEW_ONLY users
-    if (state.user.role !== 'VIEW_ONLY') {
+    // Add Time Off for users who can manage time off
+    if (['ADMIN', 'MANAGER', 'DEVELOPER', 'QA_MANAGER', 'TESTER'].includes(state.user.role)) {
       navigationItems = [...navigationItems, ...timeOffNavigationItems];
     }
     

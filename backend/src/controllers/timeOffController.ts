@@ -43,21 +43,64 @@ export const getTimeOffRequests = async (req: AuthRequest, res: Response) => {
   try {
     const { userId, status, startDate, endDate } = req.query;
     
-    const whereClause: any = {};
+    let whereClause: any = {};
     
-    // If user is a developer or tester, only show their own requests
+    // Role-based filtering for time off requests
     if (req.user!.role === 'DEVELOPER' || req.user!.role === 'TESTER') {
+      // Developers and testers can only see their own requests
       whereClause.userId = req.user!.id;
-    } else if (userId) {
-      whereClause.userId = userId as string;
+    } else if (req.user!.role === 'QA_MANAGER') {
+      // QA Managers can only see TESTER requests and their own requests
+      const roleFilter = {
+        OR: [
+          { userId: req.user!.id }, // Their own requests
+          { 
+            user: { 
+              role: 'TESTER' 
+            } 
+          } // TESTER requests they can approve
+        ]
+      };
+      whereClause = { ...whereClause, ...roleFilter };
+    } else if (req.user!.role === 'MANAGER') {
+      // MANAGERs can see DEVELOPER requests and their own requests, but NOT TESTER requests
+      const roleFilter = {
+        OR: [
+          { userId: req.user!.id }, // Their own requests
+          { 
+            user: { 
+              role: 'DEVELOPER' 
+            } 
+          } // DEVELOPER requests they can approve
+        ]
+      };
+      whereClause = { ...whereClause, ...roleFilter };
+      
+      // If filtering by specific user, ensure it's not overridden
+      if (userId) {
+        whereClause = {
+          AND: [
+            roleFilter,
+            { userId: userId as string }
+          ]
+        };
+      }
+    } else if (req.user!.role === 'ADMIN') {
+      // ADMINs can see all requests, optionally filter by specific user
+      if (userId) {
+        whereClause.userId = userId as string;
+      }
     }
     
+    // Apply additional filters
+    const additionalFilters: any = {};
+    
     if (status) {
-      whereClause.status = status as string;
+      additionalFilters.status = status as string;
     }
     
     if (startDate || endDate) {
-      whereClause.OR = [
+      additionalFilters.OR = [
         {
           startDate: {
             gte: startDate ? new Date(startDate as string) : undefined,
@@ -71,6 +114,22 @@ export const getTimeOffRequests = async (req: AuthRequest, res: Response) => {
           }
         }
       ];
+    }
+    
+    // Combine role-based filter with additional filters
+    if (Object.keys(additionalFilters).length > 0) {
+      if (whereClause.OR) {
+        // If we already have an OR clause (for QA_MANAGER), wrap everything in AND
+        whereClause = {
+          AND: [
+            whereClause,
+            additionalFilters
+          ]
+        };
+      } else {
+        // Simple merge for other roles
+        whereClause = { ...whereClause, ...additionalFilters };
+      }
     }
 
     const requests = await prisma.timeOffRequest.findMany({
@@ -401,16 +460,37 @@ export const createAdminHoliday = async (req: AuthRequest, res: Response) => {
       return res.status(400).json({ error: 'Start date cannot be after end date' });
     }
 
-    // Verify all userIds exist and are not admins
+    // Role-based user filtering for team holiday creation
+    const creatorRole = req.user!.role;
+    let userRoleFilter: any;
+
+    if (creatorRole === 'ADMIN') {
+      // ADMINs can create holidays for anyone except other ADMINs
+      userRoleFilter = { not: 'ADMIN' };
+    } else if (creatorRole === 'MANAGER') {
+      // MANAGERs can only create holidays for DEVELOPERs
+      userRoleFilter = 'DEVELOPER';
+    } else if (creatorRole === 'QA_MANAGER') {
+      // QA_MANAGERs can only create holidays for TESTERs
+      userRoleFilter = 'TESTER';
+    } else {
+      return res.status(403).json({ error: 'Not authorized to create team holidays' });
+    }
+
+    // Verify all userIds exist and match the role restrictions
     const users = await prisma.user.findMany({
       where: {
         id: { in: userIds },
-        role: { not: 'ADMIN' }
+        role: userRoleFilter
       }
     });
 
     if (users.length !== userIds.length) {
-      return res.status(400).json({ error: 'Some users not found or are admin users' });
+      const roleDescription = creatorRole === 'ADMIN' ? 'non-admin users' : 
+                             creatorRole === 'MANAGER' ? 'developers' : 'testers';
+      return res.status(400).json({ 
+        error: `Some users not found or you can only create holidays for ${roleDescription}` 
+      });
     }
 
     const createdRequests = [];

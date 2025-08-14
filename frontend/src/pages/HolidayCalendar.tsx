@@ -53,7 +53,15 @@ const HolidayCalendar: React.FC = () => {
       // Filter out admin and view-only users (but include managers, developers, and testers)
       const developers = usersResponse.data.filter((user: User) => 
         user.role !== 'ADMIN' && user.role !== 'VIEW_ONLY'
-      );
+      ).sort((a: User, b: User) => {
+        // First sort by role
+        if (a.role !== b.role) {
+          const roleOrder = { 'MANAGER': 1, 'DEVELOPER': 2, 'TESTER': 3, 'QA_MANAGER': 4 };
+          return (roleOrder[a.role as keyof typeof roleOrder] || 999) - (roleOrder[b.role as keyof typeof roleOrder] || 999);
+        }
+        // Then sort alphabetically by name
+        return a.name.localeCompare(b.name);
+      });
       setUsers(developers);
       setTimeOffRequests(timeOffResponse.data);
     } catch (error) {
@@ -129,7 +137,7 @@ const HolidayCalendar: React.FC = () => {
     const dateStr = format(dayInfo.date, 'MMM dd, yyyy');
     
     if (dayInfo.timeOff) {
-      return `${user.name} - ${dayInfo.timeOff.type.replace('_', ' ')} (${dateStr})`;
+      return `${user.name} - ${dayInfo.timeOff.type?.replace('_', ' ') || 'Time Off'} (${dateStr})`;
     }
     
     if (dayInfo.isWeekend) {

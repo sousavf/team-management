@@ -56,7 +56,7 @@ function App() {
           <Route
             path="/time-off"
             element={
-              <ProtectedRoute requiredRole={['ADMIN', 'MANAGER', 'DEVELOPER']}>
+              <ProtectedRoute requiredRole={['ADMIN', 'MANAGER', 'DEVELOPER', 'QA_MANAGER', 'TESTER']}>
                 <Layout>
                   <TimeOff />
                 </Layout>
