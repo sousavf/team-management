@@ -20,7 +20,7 @@ export interface User {
   id: string;
   email: string;
   name: string;
-  role: 'ADMIN' | 'MANAGER' | 'DEVELOPER' | 'VIEW_ONLY';
+  role: 'ADMIN' | 'MANAGER' | 'DEVELOPER' | 'VIEW_ONLY' | 'TESTER' | 'QA_MANAGER';
   createdAt: string;
   updatedAt: string;
 }

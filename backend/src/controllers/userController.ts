@@ -28,13 +28,13 @@ export const createUserValidation = [
   body('email').isEmail().normalizeEmail(),
   body('name').isLength({ min: 2 }).trim(),
   body('password').isLength({ min: 6 }),
-  body('role').optional().isIn(['ADMIN', 'MANAGER', 'DEVELOPER', 'VIEW_ONLY'])
+  body('role').optional().isIn(['ADMIN', 'MANAGER', 'DEVELOPER', 'VIEW_ONLY', 'TESTER', 'QA_MANAGER'])
 ];
 
 export const updateUserValidation = [
   body('name').optional().isLength({ min: 2 }).trim(),
   body('email').optional().isEmail().normalizeEmail(),
-  body('role').optional().isIn(['ADMIN', 'MANAGER', 'DEVELOPER', 'VIEW_ONLY'])
+  body('role').optional().isIn(['ADMIN', 'MANAGER', 'DEVELOPER', 'VIEW_ONLY', 'TESTER', 'QA_MANAGER'])
 ];
 
 export const changePasswordValidation = [

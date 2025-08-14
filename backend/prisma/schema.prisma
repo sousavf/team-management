@@ -8,75 +8,72 @@ datasource db {
 }
 
 model Allocation {
-  id                   String   @id @default(cuid())
-  userId               String
-  weekStart            DateTime
-  backendDevelopment   Float    @default(0)
-  frontendDevelopment  Float    @default(0)
-  codeReview           Float    @default(0)
-  releaseManagement    Float    @default(0)
-  ux                   Float    @default(0)
-  technicalAnalysis    Float    @default(0)
-  devSupport           Float    @default(0)
-  weeklyPriority       String?  @db.VarChar(50)
-  createdAt            DateTime @default(now())
-  updatedAt            DateTime @updatedAt
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id                  String   @id @default(cuid())
+  userId              String
+  weekStart           DateTime
+  backendDevelopment  Float    @default(0)
+  frontendDevelopment Float    @default(0)
+  codeReview          Float    @default(0)
+  releaseManagement   Float    @default(0)
+  ux                  Float    @default(0)
+  technicalAnalysis   Float    @default(0)
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+  weeklyPriority      String?  @db.VarChar(50)
+  devSupport          Float    @default(0)
+  user                User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([userId, weekStart])
   @@map("allocations")
 }
 
 model Settings {
-  id         String   @id @default(cuid())
-  key        String   @unique
-  value      String
-  updatedAt  DateTime @updatedAt
+  id        String   @id @default(cuid())
+  key       String   @unique
+  value     String
+  updatedAt DateTime @updatedAt
 
   @@map("settings")
 }
 
 model TimeOffRequest {
-  id              String            @id @default(cuid())
-  userId          String
-  startDate       DateTime
-  endDate         DateTime
-  type            TimeOffType
-  reason          String?
-  status          RequestStatus     @default(PENDING)
-  approvedBy      String?
-  approvedAt      DateTime?
-  cancelledBy     String?
-  cancelledAt     DateTime?
+  id                 String        @id @default(cuid())
+  userId             String
+  startDate          DateTime
+  endDate            DateTime
+  type               TimeOffType
+  reason             String?
+  status             RequestStatus @default(PENDING)
+  approvedBy         String?
+  approvedAt         DateTime?
+  createdAt          DateTime      @default(now())
+  updatedAt          DateTime      @updatedAt
   cancellationReason String?
-  isAdminCreated  Boolean           @default(false)
-  createdBy       String?
-  createdAt       DateTime          @default(now())
-  updatedAt       DateTime          @updatedAt
-
-  user      User  @relation(fields: [userId], references: [id], onDelete: Cascade)
-  approver  User? @relation("ApprovedBy", fields: [approvedBy], references: [id])
-  canceller User? @relation("CancelledBy", fields: [cancelledBy], references: [id])
-  creator   User? @relation("CreatedBy", fields: [createdBy], references: [id])
+  cancelledAt        DateTime?
+  cancelledBy        String?
+  createdBy          String?
+  isAdminCreated     Boolean       @default(false)
+  approver           User?         @relation("ApprovedBy", fields: [approvedBy], references: [id])
+  canceller          User?         @relation("CancelledBy", fields: [cancelledBy], references: [id])
+  creator            User?         @relation("CreatedBy", fields: [createdBy], references: [id])
+  user               User          @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("time_off_requests")
 }
 
 model User {
-  id        String   @id @default(cuid())
-  email     String   @unique
-  name      String
-  password  String
-  role      Role     @default(DEVELOPER)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  allocations    Allocation[]
-  timeOffRequests TimeOffRequest[]
-  approvedRequests TimeOffRequest[] @relation("ApprovedBy")
+  id                String           @id @default(cuid())
+  email             String           @unique
+  name              String
+  password          String
+  role              Role             @default(DEVELOPER)
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+  allocations       Allocation[]
+  approvedRequests  TimeOffRequest[] @relation("ApprovedBy")
   cancelledRequests TimeOffRequest[] @relation("CancelledBy")
-  createdRequests TimeOffRequest[] @relation("CreatedBy")
+  createdRequests   TimeOffRequest[] @relation("CreatedBy")
+  timeOffRequests   TimeOffRequest[]
 
   @@map("users")
 }
@@ -93,6 +90,8 @@ enum Role {
   MANAGER
   DEVELOPER
   VIEW_ONLY
+  TESTER
+  QA_MANAGER
 }
 
 enum TimeOffType {

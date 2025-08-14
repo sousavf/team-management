@@ -32,7 +32,7 @@ const Users: React.FC = () => {
     name: '',
     email: '',
     password: '',
-    role: 'DEVELOPER' as 'ADMIN' | 'MANAGER' | 'DEVELOPER' | 'VIEW_ONLY',
+    role: 'DEVELOPER' as 'ADMIN' | 'MANAGER' | 'DEVELOPER' | 'VIEW_ONLY' | 'TESTER' | 'QA_MANAGER',
   });
 
   useEffect(() => {
@@ -114,6 +114,10 @@ const Users: React.FC = () => {
         return 'badge-warning';
       case 'VIEW_ONLY':
         return 'badge-secondary';
+      case 'TESTER':
+        return 'badge-success';
+      case 'QA_MANAGER':
+        return 'badge-warning';
       default:
         return 'badge-info';
     }
@@ -194,6 +198,8 @@ const Users: React.FC = () => {
                   <option value="MANAGER">Manager</option>
                   <option value="ADMIN">Admin</option>
                   <option value="VIEW_ONLY">View Only</option>
+                  <option value="TESTER">Tester</option>
+                  <option value="QA_MANAGER">QA Manager</option>
                 </select>
               </div>
               <div className="flex justify-end space-x-3">
@@ -249,7 +255,7 @@ const Users: React.FC = () => {
                     <td className="text-sm text-gray-500">{user.email}</td>
                     <td>
                       <span className={`badge ${getRoleBadge(user.role)}`}>
-                        {user.role === 'VIEW_ONLY' ? 'View Only' : user.role}
+                        {user.role === 'VIEW_ONLY' ? 'View Only' : user.role === 'QA_MANAGER' ? 'QA Manager' : user.role}
                       </span>
                     </td>
                     <td className="text-sm text-gray-500">

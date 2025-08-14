@@ -28,7 +28,7 @@ export interface CreateUserRequest {
   email: string;
   name: string;
   password: string;
-  role?: 'ADMIN' | 'MANAGER' | 'DEVELOPER';
+  role?: 'ADMIN' | 'MANAGER' | 'DEVELOPER' | 'TESTER' | 'QA_MANAGER';
 }
 
 export interface AllocationData {

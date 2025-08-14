@@ -45,8 +45,8 @@ export const getTimeOffRequests = async (req: AuthRequest, res: Response) => {
     
     const whereClause: any = {};
     
-    // If user is a developer, only show their own requests
-    if (req.user!.role === 'DEVELOPER') {
+    // If user is a developer or tester, only show their own requests
+    if (req.user!.role === 'DEVELOPER' || req.user!.role === 'TESTER') {
       whereClause.userId = req.user!.id;
     } else if (userId) {
       whereClause.userId = userId as string;
@@ -183,8 +183,8 @@ export const createTimeOffRequest = async (req: AuthRequest, res: Response) => {
     normalizedStartDate.setHours(12, 0, 0, 0);
     normalizedEndDate.setHours(12, 0, 0, 0);
 
-    // Managers auto-approve their own requests
-    const isManager = req.user!.role === 'MANAGER';
+    // Managers and QA_MANAGER auto-approve their own requests
+    const isManager = req.user!.role === 'MANAGER' || req.user!.role === 'QA_MANAGER';
     const status = isManager ? 'APPROVED' : 'PENDING';
 
     const request = await prisma.timeOffRequest.create({
@@ -230,7 +230,14 @@ export const updateTimeOffRequest = async (req: AuthRequest, res: Response) => {
     }
 
     const request = await prisma.timeOffRequest.findUnique({
-      where: { id }
+      where: { id },
+      include: {
+        user: {
+          select: {
+            role: true
+          }
+        }
+      }
     });
 
     if (!request) {
@@ -239,6 +246,25 @@ export const updateTimeOffRequest = async (req: AuthRequest, res: Response) => {
 
     if (request.status !== 'PENDING') {
       return res.status(400).json({ error: 'Request has already been processed' });
+    }
+
+    // Authorization logic for approving requests
+    const approverRole = req.user!.role;
+    const requestUserRole = request.user.role;
+
+    // Only ADMIN can approve any request
+    // QA_MANAGER can only approve TESTER requests
+    // MANAGER can approve DEVELOPER requests but NOT TESTER requests
+    if (approverRole !== 'ADMIN') {
+      if (approverRole === 'QA_MANAGER' && requestUserRole !== 'TESTER') {
+        return res.status(403).json({ error: 'QA Managers can only approve tester time-off requests' });
+      }
+      if (approverRole === 'MANAGER' && requestUserRole === 'TESTER') {
+        return res.status(403).json({ error: 'Regular managers cannot approve tester time-off requests. Contact QA Manager.' });
+      }
+      if (!['MANAGER', 'QA_MANAGER'].includes(approverRole)) {
+        return res.status(403).json({ error: 'Not authorized to approve time-off requests' });
+      }
     }
 
     const updatedRequest = await prisma.timeOffRequest.update({
@@ -486,15 +512,15 @@ export const deleteTimeOffRequest = async (req: AuthRequest, res: Response) => {
       return res.status(404).json({ error: 'Request not found' });
     }
 
-    if (request.userId !== userId && !['ADMIN', 'MANAGER'].includes(req.user!.role)) {
+    if (request.userId !== userId && !['ADMIN', 'MANAGER', 'QA_MANAGER'].includes(req.user!.role)) {
       return res.status(403).json({ error: 'Not authorized to delete this request' });
     }
 
     // Admins can delete approved requests if they are admin-created holidays
-    // Managers can delete their own approved requests
+    // Managers and QA_MANAGER can delete their own approved requests
     if (request.status === 'APPROVED' && 
         !(req.user!.role === 'ADMIN' && request.isAdminCreated) && 
-        !(req.user!.role === 'MANAGER' && request.userId === userId)) {
+        !(['MANAGER', 'QA_MANAGER'].includes(req.user!.role) && request.userId === userId)) {
       return res.status(400).json({ error: 'Cannot delete approved requests. Use cancel instead.' });
     }
 

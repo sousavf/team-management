@@ -37,8 +37,8 @@ router.get('/me', authenticate, getCurrentUser);
 router.post('/change-password', authenticate, changePasswordValidation, changePassword);
 router.get('/', authenticate, getUsers);
 router.get('/:id', authenticate, getUser);
-router.post('/', authenticate, authorize('ADMIN', 'MANAGER'), createUserValidation, createUser);
-router.put('/:id', authenticate, authorize('ADMIN', 'MANAGER'), updateUserValidation, updateUser);
+router.post('/', authenticate, authorize('ADMIN', 'MANAGER', 'QA_MANAGER'), createUserValidation, createUser);
+router.put('/:id', authenticate, authorize('ADMIN', 'MANAGER', 'QA_MANAGER'), updateUserValidation, updateUser);
 router.delete('/:id', authenticate, authorize('ADMIN'), deleteUser);
 
 export default router;

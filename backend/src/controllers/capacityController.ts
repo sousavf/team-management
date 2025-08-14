@@ -103,7 +103,7 @@ export const getAllocations = async (req: AuthRequest, res: Response) => {
       },
       user: {
         role: {
-          notIn: ['ADMIN', 'MANAGER', 'VIEW_ONLY']
+          notIn: ['ADMIN', 'MANAGER', 'VIEW_ONLY', 'TESTER', 'QA_MANAGER']
         }
       }
     };
@@ -257,7 +257,7 @@ export const copyFromPreviousWeek = async (req: AuthRequest, res: Response) => {
         weekStart: previousWeekStart,
         user: {
           role: {
-            notIn: ['ADMIN', 'MANAGER', 'VIEW_ONLY']
+            notIn: ['ADMIN', 'MANAGER', 'VIEW_ONLY', 'TESTER', 'QA_MANAGER']
           }
         }
       },
@@ -351,7 +351,7 @@ export const getTeamCapacityOverview = async (req: AuthRequest, res: Response) =
         },
         user: {
           role: {
-            notIn: ['ADMIN', 'MANAGER', 'VIEW_ONLY']
+            notIn: ['ADMIN', 'MANAGER', 'VIEW_ONLY', 'TESTER', 'QA_MANAGER']
           }
         }
       },
@@ -370,7 +370,7 @@ export const getTeamCapacityOverview = async (req: AuthRequest, res: Response) =
     const users = await prisma.user.findMany({
       where: {
         role: {
-          notIn: ['ADMIN', 'MANAGER', 'VIEW_ONLY']
+          notIn: ['ADMIN', 'MANAGER', 'VIEW_ONLY', 'TESTER', 'QA_MANAGER']
         }
       },
       select: {
@@ -456,7 +456,7 @@ export const getJiraTickets = async (req: AuthRequest, res: Response) => {
     const users = await prisma.user.findMany({
       where: {
         role: {
-          notIn: ['ADMIN', 'MANAGER', 'VIEW_ONLY']
+          notIn: ['ADMIN', 'MANAGER', 'VIEW_ONLY', 'TESTER', 'QA_MANAGER']
         }
       },
       select: {
@@ -503,7 +503,7 @@ export const getTodoCapacityAggregation = async (req: AuthRequest, res: Response
         },
         user: {
           role: {
-            notIn: ['ADMIN', 'MANAGER', 'VIEW_ONLY']
+            notIn: ['ADMIN', 'MANAGER', 'VIEW_ONLY', 'TESTER', 'QA_MANAGER']
           }
         }
       },

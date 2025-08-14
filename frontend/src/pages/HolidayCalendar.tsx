@@ -50,7 +50,7 @@ const HolidayCalendar: React.FC = () => {
         timeOffApi.getCalendarRequests({})
       ]);
 
-      // Filter out admin and view-only users (but include managers)
+      // Filter out admin and view-only users (but include managers, developers, and testers)
       const developers = usersResponse.data.filter((user: User) => 
         user.role !== 'ADMIN' && user.role !== 'VIEW_ONLY'
       );
