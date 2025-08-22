@@ -6,12 +6,12 @@
 
 ### ✨ Major Feature: Historical Capacity Data Extraction
 
-The biggest addition in v1.1.0 is the ability to **export historical team capacity data** directly from the Dashboard. This powerful new feature enables managers and admins to perform comprehensive capacity analysis and planning.
+The biggest addition in v1.1.0 is the ability to **export historical team capacity data** directly from the Dashboard. This powerful new feature enables managers, admins, and view-only users to perform comprehensive capacity analysis and planning.
 
 #### 📊 Key Features:
 
 **🎯 Dashboard Integration**
-- New "Export Historical" button in the Dashboard (visible to Admin/Manager roles only)
+- New "Export Historical" button in the Dashboard (visible to Admin, Manager, and View-Only roles)
 - Seamless integration alongside existing "Export Current" functionality
 - Intuitive modal dialog for configuring exports
 
@@ -34,7 +34,7 @@ The biggest addition in v1.1.0 is the ability to **export historical team capaci
   - Optional weekly priorities/notes
 
 **🔐 Security & Access Control**
-- Restricted to Admin and Manager roles only
+- Available to Admin, Manager, and View-Only roles
 - Input validation for date ranges
 - Secure data processing and export generation
 
@@ -103,7 +103,7 @@ DOCKER_USERNAME=your-username docker-compose up -d
 
 ## 🎯 Who Benefits
 
-### **Managers & Admins**
+### **Managers, Admins & View-Only Users**
 - Historical capacity analysis and planning
 - Detailed team utilization reports
 - Data-driven resource allocation decisions
@@ -138,7 +138,7 @@ DOCKER_USERNAME=your-username docker-compose up -d
 
 ## 🔐 Security Notes
 
-- Historical exports require elevated privileges (Admin/Manager)
+- Historical exports available to Admin, Manager, and View-Only roles
 - Input validation on all export parameters
 - Secure data processing pipeline
 - No sensitive data exposure

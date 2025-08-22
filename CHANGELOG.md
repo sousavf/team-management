@@ -11,7 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Historical Capacity Data Extraction**: New feature to export historical team capacity data from the Dashboard
 - **Excel Export with Custom Date Ranges**: Users can select any date range for historical analysis
 - **Multi-Sheet Excel Reports**: Professional Excel workbooks with summary and detailed allocation sheets
-- **Role-Based Export Access**: Historical exports restricted to Admin and Manager roles only
+- **Role-Based Export Access**: Historical exports available to Admin, Manager, and View-Only roles
 - **Flexible Export Options**: Optional inclusion/exclusion of weekly priorities and notes
 - **Enhanced Dashboard UI**: New "Export Historical" button alongside existing export functionality
 
@@ -28,7 +28,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Error Handling**: Improved error messages and user feedback for export operations
 
 ### Security
-- **Access Control**: Historical exports require Admin or Manager privileges
+- **Access Control**: Historical exports available to Admin, Manager, and View-Only roles
 - **Data Validation**: Input validation for date ranges and export parameters
 
 ## [1.0.0] - 2025-01-21

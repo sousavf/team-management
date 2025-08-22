@@ -96,7 +96,7 @@ Or specify the version explicitly:
 - **Dashboard Historical Export**: New "Export Historical" button
 - **Custom Date Ranges**: Select any time period for analysis  
 - **Professional Excel Reports**: Multi-sheet workbooks with detailed data
-- **Role-Based Access**: Historical exports for Admin/Manager only
+- **Role-Based Access**: Historical exports for Admin, Manager, and View-Only roles
 
 ### For Developers:
 - **New API Endpoints**: `/api/capacity/extract-historical`, `/api/capacity/export-excel`

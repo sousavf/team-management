@@ -161,7 +161,7 @@ const Dashboard: React.FC = () => {
   };
 
   const canExport = () => {
-    return ['ADMIN', 'MANAGER'].includes(state.user?.role || '');
+    return ['ADMIN', 'MANAGER', 'VIEW_ONLY'].includes(state.user?.role || '');
   };
 
   const handleHistoricalExport = async () => {

@@ -88,7 +88,7 @@ echo ""
 echo "🆕 What's new in v1.1.0:"
 echo "   - Historical capacity data extraction from Dashboard"
 echo "   - Excel export with custom date ranges"
-echo "   - Enhanced reporting for managers and admins"
+echo "   - Enhanced reporting for managers, admins, and view-only users"
 echo "   - Multi-sheet Excel workbooks with detailed analytics"
 
 # Clean up builder
