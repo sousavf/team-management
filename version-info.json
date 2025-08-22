@@ -1,0 +1,51 @@
+{
+  "version": "1.1.0",
+  "releaseDate": "2025-01-22",
+  "codename": "Historical Analytics",
+  "major": 1,
+  "minor": 1,
+  "patch": 0,
+  "prerelease": null,
+  "buildMetadata": null,
+  "dockerImages": {
+    "backend": {
+      "repository": "team-management-backend",
+      "tags": ["1.1.0", "latest"],
+      "platforms": ["linux/amd64", "linux/arm64"]
+    },
+    "frontend": {
+      "repository": "team-management-frontend", 
+      "tags": ["1.1.0", "latest"],
+      "platforms": ["linux/amd64", "linux/arm64"]
+    }
+  },
+  "features": {
+    "new": [
+      "Historical capacity data extraction",
+      "Excel export with custom date ranges",
+      "Multi-sheet professional Excel reports",
+      "Role-based historical data access",
+      "Enhanced Dashboard export functionality"
+    ],
+    "enhanced": [
+      "Backend API with new endpoints",
+      "ExcelJS integration for professional reports",
+      "Improved data processing capabilities",
+      "Enhanced user experience with export modals"
+    ]
+  },
+  "compatibility": {
+    "backwardCompatible": true,
+    "databaseMigration": false,
+    "configurationChanges": false,
+    "breakingChanges": []
+  },
+  "requirements": {
+    "docker": ">=20.0.0",
+    "dockerCompose": ">=2.0.0",
+    "memory": ">=2GB",
+    "storage": ">=10GB"
+  },
+  "changelog": "CHANGELOG.md",
+  "releaseNotes": "RELEASE-NOTES-v1.1.0.md"
+}
