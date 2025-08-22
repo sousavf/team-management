@@ -78,6 +78,11 @@ export const capacityApi = {
     api.put(`/capacity/allocations/${userId}/${weekStart}`, data),
   copyFromPreviousWeek: (weekStart: string) =>
     api.post('/capacity/copy-from-previous-week', { weekStart }),
+  extractHistoricalCapacity: (params?: any) => api.get('/capacity/extract-historical', { params }),
+  exportToExcel: (params?: any) => api.get('/capacity/export-excel', { 
+    params, 
+    responseType: 'blob' 
+  }),
 };
 
 export const timeOffApi = {

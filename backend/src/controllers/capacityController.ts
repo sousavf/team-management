@@ -21,6 +21,7 @@ import { PrismaClient } from '@prisma/client';
 import { AuthRequest } from '../middleware/auth';
 import { startOfWeek, addWeeks, format, parseISO, isWithinInterval, addDays } from 'date-fns';
 import { jiraService } from '../services/jiraService';
+import * as ExcelJS from 'exceljs';
 
 const prisma = new PrismaClient();
 
@@ -578,5 +579,305 @@ export const getTodoCapacityAggregation = async (req: AuthRequest, res: Response
   } catch (error) {
     console.error('Error getting TODO capacity aggregation:', error);
     res.status(500).json({ error: 'Server error' });
+  }
+};
+
+export const extractHistoricalCapacity = async (req: AuthRequest, res: Response) => {
+  try {
+    const { startWeek, endWeek, userIds, includeNotes = true } = req.query;
+    
+    if (!startWeek || !endWeek) {
+      return res.status(400).json({ error: 'Start week and end week are required' });
+    }
+
+    const startDate = parseISO(startWeek as string);
+    const endDate = parseISO(endWeek as string);
+
+    if (startDate >= endDate) {
+      return res.status(400).json({ error: 'Start week must be before end week' });
+    }
+
+    const whereClause: any = {
+      weekStart: {
+        gte: startDate,
+        lte: endDate
+      },
+      user: {
+        role: {
+          notIn: ['ADMIN', 'MANAGER', 'VIEW_ONLY', 'TESTER', 'QA_MANAGER']
+        }
+      }
+    };
+
+    if (userIds && (userIds as string).trim()) {
+      const userIdArray = (userIds as string).split(',').map(id => id.trim());
+      whereClause.userId = { in: userIdArray };
+    }
+
+    const allocations = await prisma.allocation.findMany({
+      where: whereClause,
+      include: {
+        user: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            role: true
+          }
+        }
+      },
+      orderBy: [
+        { weekStart: 'asc' },
+        { user: { name: 'asc' } }
+      ]
+    });
+
+    // Process data for extraction
+    const extractedData = [];
+    const weeklyData = new Map();
+
+    for (const allocation of allocations) {
+      const weekKey = format(allocation.weekStart, 'yyyy-MM-dd');
+      
+      if (!weeklyData.has(weekKey)) {
+        weeklyData.set(weekKey, []);
+      }
+
+      const workingDays = await calculateWorkingDays(allocation.userId, allocation.weekStart);
+      const maxHours = workingDays * HOURS_PER_DAY * DEFAULT_PACE_FACTOR;
+      const totalAllocation = 
+        allocation.backendDevelopment + allocation.frontendDevelopment +
+        allocation.codeReview + allocation.releaseManagement +
+        allocation.ux + allocation.technicalAnalysis + allocation.devSupport;
+
+      const userCapacityData = {
+        userId: allocation.userId,
+        userName: allocation.user.name,
+        userEmail: allocation.user.email,
+        userRole: allocation.user.role,
+        weekStart: weekKey,
+        totalAllocation: totalAllocation,
+        allocatedHours: maxHours * (totalAllocation / 100),
+        maxHours: maxHours,
+        workingDays: workingDays,
+        categories: {
+          backendDevelopment: allocation.backendDevelopment,
+          frontendDevelopment: allocation.frontendDevelopment,
+          codeReview: allocation.codeReview,
+          releaseManagement: allocation.releaseManagement,
+          ux: allocation.ux,
+          technicalAnalysis: allocation.technicalAnalysis,
+          devSupport: allocation.devSupport
+        }
+      };
+
+      if (includeNotes === 'true' && allocation.weeklyPriority) {
+        (userCapacityData as any).weeklyPriority = allocation.weeklyPriority;
+      }
+
+      weeklyData.get(weekKey).push(userCapacityData);
+    }
+
+    // Convert to final format
+    for (const [weekStart, users] of weeklyData.entries()) {
+      extractedData.push({
+        weekStart,
+        users,
+        summary: {
+          totalUsers: users.length,
+          totalAllocatedHours: users.reduce((sum: number, user: any) => sum + user.allocatedHours, 0),
+          totalMaxHours: users.reduce((sum: number, user: any) => sum + user.maxHours, 0),
+          averageUtilization: users.length > 0 ? 
+            users.reduce((sum: number, user: any) => sum + user.totalAllocation, 0) / users.length : 0
+        }
+      });
+    }
+
+    // Generate overall summary
+    const overallSummary = {
+      dateRange: {
+        start: format(startDate, 'yyyy-MM-dd'),
+        end: format(endDate, 'yyyy-MM-dd')
+      },
+      totalWeeks: extractedData.length,
+      uniqueUsers: new Set(allocations.map(a => a.userId)).size,
+      totalRecords: allocations.length,
+      averageTeamSize: extractedData.length > 0 ? 
+        extractedData.reduce((sum, week) => sum + week.summary.totalUsers, 0) / extractedData.length : 0,
+      totalHoursAllocated: extractedData.reduce((sum, week) => sum + week.summary.totalAllocatedHours, 0),
+      totalHoursAvailable: extractedData.reduce((sum, week) => sum + week.summary.totalMaxHours, 0)
+    };
+
+    res.json({
+      summary: overallSummary,
+      weeklyData: extractedData,
+      extractedAt: new Date().toISOString(),
+      parameters: {
+        startWeek: startWeek as string,
+        endWeek: endWeek as string,
+        userIds: userIds as string || 'all',
+        includeNotes: includeNotes === 'true'
+      }
+    });
+  } catch (error) {
+    console.error('Error extracting historical capacity:', error);
+    res.status(500).json({ error: 'Failed to extract historical capacity data' });
+  }
+};
+
+export const exportHistoricalCapacityToExcel = async (req: AuthRequest, res: Response) => {
+  try {
+    const { startWeek, endWeek, userIds, includeNotes = true } = req.query;
+    
+    if (!startWeek || !endWeek) {
+      return res.status(400).json({ error: 'Start week and end week are required' });
+    }
+
+    const startDate = parseISO(startWeek as string);
+    const endDate = parseISO(endWeek as string);
+
+    if (startDate >= endDate) {
+      return res.status(400).json({ error: 'Start week must be before end week' });
+    }
+
+    const whereClause: any = {
+      weekStart: {
+        gte: startDate,
+        lte: endDate
+      },
+      user: {
+        role: {
+          notIn: ['ADMIN', 'MANAGER', 'VIEW_ONLY', 'TESTER', 'QA_MANAGER']
+        }
+      }
+    };
+
+    if (userIds && (userIds as string).trim()) {
+      const userIdArray = (userIds as string).split(',').map(id => id.trim());
+      whereClause.userId = { in: userIdArray };
+    }
+
+    const allocations = await prisma.allocation.findMany({
+      where: whereClause,
+      include: {
+        user: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            role: true
+          }
+        }
+      },
+      orderBy: [
+        { weekStart: 'asc' },
+        { user: { name: 'asc' } }
+      ]
+    });
+
+    // Create Excel workbook
+    const workbook = new ExcelJS.Workbook();
+    workbook.creator = 'Team Management System';
+    workbook.created = new Date();
+
+    // Create Summary worksheet
+    const summarySheet = workbook.addWorksheet('Summary');
+    summarySheet.columns = [
+      { header: 'Metric', key: 'metric', width: 25 },
+      { header: 'Value', key: 'value', width: 20 }
+    ];
+
+    const uniqueUsers = new Set(allocations.map(a => a.userId)).size;
+    const totalWeeks = Math.ceil((endDate.getTime() - startDate.getTime()) / (7 * 24 * 60 * 60 * 1000));
+
+    summarySheet.addRows([
+      { metric: 'Export Date', value: format(new Date(), 'yyyy-MM-dd HH:mm:ss') },
+      { metric: 'Date Range Start', value: format(startDate, 'yyyy-MM-dd') },
+      { metric: 'Date Range End', value: format(endDate, 'yyyy-MM-dd') },
+      { metric: 'Total Weeks', value: totalWeeks },
+      { metric: 'Unique Users', value: uniqueUsers },
+      { metric: 'Total Records', value: allocations.length },
+    ]);
+
+    // Create Detailed Data worksheet
+    const detailSheet = workbook.addWorksheet('Detailed Allocations');
+    
+    const columns = [
+      { header: 'Week Start', key: 'weekStart', width: 12 },
+      { header: 'User Name', key: 'userName', width: 20 },
+      { header: 'User Email', key: 'userEmail', width: 25 },
+      { header: 'Role', key: 'userRole', width: 12 },
+      { header: 'Working Days', key: 'workingDays', width: 12 },
+      { header: 'Max Hours', key: 'maxHours', width: 12 },
+      { header: 'Total Allocation %', key: 'totalAllocation', width: 15 },
+      { header: 'Allocated Hours', key: 'allocatedHours', width: 15 },
+      { header: 'Backend %', key: 'backendDevelopment', width: 12 },
+      { header: 'Frontend %', key: 'frontendDevelopment', width: 12 },
+      { header: 'Code Review %', key: 'codeReview', width: 15 },
+      { header: 'Release Mgmt %', key: 'releaseManagement', width: 15 },
+      { header: 'UX %', key: 'ux', width: 8 },
+      { header: 'Tech Analysis %', key: 'technicalAnalysis', width: 15 },
+      { header: 'Prod Support %', key: 'devSupport', width: 15 }
+    ];
+
+    if (includeNotes === 'true') {
+      columns.push({ header: 'Weekly Priority/Notes', key: 'weeklyPriority', width: 30 });
+    }
+
+    detailSheet.columns = columns;
+
+    // Add data rows
+    for (const allocation of allocations) {
+      const workingDays = await calculateWorkingDays(allocation.userId, allocation.weekStart);
+      const maxHours = workingDays * HOURS_PER_DAY * DEFAULT_PACE_FACTOR;
+      const totalAllocation = 
+        allocation.backendDevelopment + allocation.frontendDevelopment +
+        allocation.codeReview + allocation.releaseManagement +
+        allocation.ux + allocation.technicalAnalysis + allocation.devSupport;
+
+      const rowData: any = {
+        weekStart: format(allocation.weekStart, 'yyyy-MM-dd'),
+        userName: allocation.user.name,
+        userEmail: allocation.user.email,
+        userRole: allocation.user.role,
+        workingDays: workingDays,
+        maxHours: Number(maxHours.toFixed(1)),
+        totalAllocation: totalAllocation,
+        allocatedHours: Number((maxHours * (totalAllocation / 100)).toFixed(1)),
+        backendDevelopment: allocation.backendDevelopment,
+        frontendDevelopment: allocation.frontendDevelopment,
+        codeReview: allocation.codeReview,
+        releaseManagement: allocation.releaseManagement,
+        ux: allocation.ux,
+        technicalAnalysis: allocation.technicalAnalysis,
+        devSupport: allocation.devSupport
+      };
+
+      if (includeNotes === 'true') {
+        rowData.weeklyPriority = allocation.weeklyPriority || '';
+      }
+
+      detailSheet.addRow(rowData);
+    }
+
+    // Style the headers
+    summarySheet.getRow(1).font = { bold: true };
+    detailSheet.getRow(1).font = { bold: true };
+    detailSheet.getRow(1).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFE0E0E0' } };
+
+    // Set filename
+    const filename = `team-capacity-export-${format(startDate, 'yyyy-MM-dd')}-to-${format(endDate, 'yyyy-MM-dd')}.xlsx`;
+
+    // Set response headers
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+
+    // Write to response
+    await workbook.xlsx.write(res);
+    res.end();
+
+  } catch (error) {
+    console.error('Error exporting to Excel:', error);
+    res.status(500).json({ error: 'Failed to export capacity data to Excel' });
   }
 };
