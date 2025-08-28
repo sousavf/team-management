@@ -147,6 +147,10 @@ export interface TodoCapacityItem {
   priority: string;
   backendHours: number;
   frontendHours: number;
+  codeReviewHours: number;
+  releaseManagementHours: number;
+  devSupportHours: number;
+  technicalAnalysisHours: number;
   totalHours: number;
   userCount: number;
   users: string[];

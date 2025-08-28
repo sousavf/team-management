@@ -525,6 +525,10 @@ export const getTodoCapacityAggregation = async (req: AuthRequest, res: Response
       priority: string;
       backendHours: number;
       frontendHours: number;
+      codeReviewHours: number;
+      releaseManagementHours: number;
+      devSupportHours: number;
+      technicalAnalysisHours: number;
       totalHours: number;
       userCount: number;
       users: string[];
@@ -543,16 +547,21 @@ export const getTodoCapacityAggregation = async (req: AuthRequest, res: Response
       // Calculate all relevant category hours
       const backendHours = maxHours * (allocation.backendDevelopment / 100);
       const frontendHours = maxHours * (allocation.frontendDevelopment / 100);
+      const codeReviewHours = maxHours * (allocation.codeReview / 100);
       const releaseManagementHours = maxHours * (allocation.releaseManagement / 100);
       const devSupportHours = maxHours * (allocation.devSupport / 100);
       const technicalAnalysisHours = maxHours * (allocation.technicalAnalysis / 100);
-      const totalAllocatedHours = backendHours + frontendHours + releaseManagementHours + devSupportHours + technicalAnalysisHours;
+      const totalAllocatedHours = backendHours + frontendHours + codeReviewHours + releaseManagementHours + devSupportHours + technicalAnalysisHours;
 
       if (!todoAggregation.has(priorityKey)) {
         todoAggregation.set(priorityKey, {
           priority: priority, // Use original case for display
           backendHours: 0,
           frontendHours: 0,
+          codeReviewHours: 0,
+          releaseManagementHours: 0,
+          devSupportHours: 0,
+          technicalAnalysisHours: 0,
           totalHours: 0,
           userCount: 0,
           users: []
@@ -562,6 +571,10 @@ export const getTodoCapacityAggregation = async (req: AuthRequest, res: Response
       const existing = todoAggregation.get(priorityKey)!;
       existing.backendHours += backendHours;
       existing.frontendHours += frontendHours;
+      existing.codeReviewHours += codeReviewHours;
+      existing.releaseManagementHours += releaseManagementHours;
+      existing.devSupportHours += devSupportHours;
+      existing.technicalAnalysisHours += technicalAnalysisHours;
       existing.totalHours += totalAllocatedHours;
       
       if (!existing.users.includes(allocation.user.name)) {
@@ -621,6 +634,10 @@ export const getNextWeekTodoCapacityAggregation = async (req: AuthRequest, res: 
       priority: string;
       backendHours: number;
       frontendHours: number;
+      codeReviewHours: number;
+      releaseManagementHours: number;
+      devSupportHours: number;
+      technicalAnalysisHours: number;
       totalHours: number;
       userCount: number;
       users: string[];
@@ -639,16 +656,21 @@ export const getNextWeekTodoCapacityAggregation = async (req: AuthRequest, res: 
       // Calculate all relevant category hours
       const backendHours = maxHours * (allocation.backendDevelopment / 100);
       const frontendHours = maxHours * (allocation.frontendDevelopment / 100);
+      const codeReviewHours = maxHours * (allocation.codeReview / 100);
       const releaseManagementHours = maxHours * (allocation.releaseManagement / 100);
       const devSupportHours = maxHours * (allocation.devSupport / 100);
       const technicalAnalysisHours = maxHours * (allocation.technicalAnalysis / 100);
-      const totalAllocatedHours = backendHours + frontendHours + releaseManagementHours + devSupportHours + technicalAnalysisHours;
+      const totalAllocatedHours = backendHours + frontendHours + codeReviewHours + releaseManagementHours + devSupportHours + technicalAnalysisHours;
       
       if (!todoAggregation.has(priorityKey)) {
         todoAggregation.set(priorityKey, {
           priority: priority, // Use original case for display
           backendHours: 0,
           frontendHours: 0,
+          codeReviewHours: 0,
+          releaseManagementHours: 0,
+          devSupportHours: 0,
+          technicalAnalysisHours: 0,
           totalHours: 0,
           userCount: 0,
           users: []
@@ -658,6 +680,10 @@ export const getNextWeekTodoCapacityAggregation = async (req: AuthRequest, res: 
       const existing = todoAggregation.get(priorityKey)!;
       existing.backendHours += backendHours;
       existing.frontendHours += frontendHours;
+      existing.codeReviewHours += codeReviewHours;
+      existing.releaseManagementHours += releaseManagementHours;
+      existing.devSupportHours += devSupportHours;
+      existing.technicalAnalysisHours += technicalAnalysisHours;
       existing.totalHours += totalAllocatedHours;
       
       if (!existing.users.includes(allocation.user.name)) {

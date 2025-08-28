@@ -397,7 +397,7 @@ const Dashboard: React.FC = () => {
               </span>
             </h3>
             <p className="text-sm text-gray-600 mt-1">
-              Total capacity allocation by TODO priority (Backend + Frontend + Release Management + Prod Support + Technical Analysis)
+              Total capacity allocation by TODO priority (Backend + Frontend + Code Review + Release Management + Prod Support + Technical Analysis)
             </p>
           </div>
           <div className="card-body">
@@ -408,6 +408,10 @@ const Dashboard: React.FC = () => {
                     <th className="text-left">TODO Priority</th>
                     <th className="text-center">Backend Hours</th>
                     <th className="text-center">Frontend Hours</th>
+                    <th className="text-center">Code Review Hours</th>
+                    <th className="text-center">Release Mgmt Hours</th>
+                    <th className="text-center">Prod Support Hours</th>
+                    <th className="text-center">Analysis Hours</th>
                     <th className="text-center">Total Hours</th>
                     <th className="text-center">Developers</th>
                     <th className="text-left">Team Members</th>
@@ -434,6 +438,26 @@ const Dashboard: React.FC = () => {
                         </span>
                       </td>
                       <td className="text-center">
+                        <span className="text-indigo-600 font-medium">
+                          {Math.round(item.codeReviewHours)}h
+                        </span>
+                      </td>
+                      <td className="text-center">
+                        <span className="text-orange-600 font-medium">
+                          {Math.round(item.releaseManagementHours)}h
+                        </span>
+                      </td>
+                      <td className="text-center">
+                        <span className="text-red-600 font-medium">
+                          {Math.round(item.devSupportHours)}h
+                        </span>
+                      </td>
+                      <td className="text-center">
+                        <span className="text-purple-600 font-medium">
+                          {Math.round(item.technicalAnalysisHours)}h
+                        </span>
+                      </td>
+                      <td className="text-center">
                         <span className="text-gray-900 font-bold">
                           {Math.round(item.totalHours)}h
                         </span>
@@ -445,9 +469,11 @@ const Dashboard: React.FC = () => {
                       </td>
                       <td className="text-left">
                         <div className="max-w-xs">
-                          <div className="text-sm text-gray-600 truncate" title={item.users.join(', ')}>
-                            {item.users.join(', ')}
-                          </div>
+                          {item.users.map((user, userIndex) => (
+                            <div key={userIndex} className="text-sm text-gray-600">
+                              {user}
+                            </div>
+                          ))}
                         </div>
                       </td>
                     </tr>
@@ -461,6 +487,18 @@ const Dashboard: React.FC = () => {
                     </td>
                     <td className="text-center text-green-600">
                       {Math.round(todoCapacity.todoCapacities.reduce((sum, item) => sum + item.frontendHours, 0))}h
+                    </td>
+                    <td className="text-center text-indigo-600">
+                      {Math.round(todoCapacity.todoCapacities.reduce((sum, item) => sum + item.codeReviewHours, 0))}h
+                    </td>
+                    <td className="text-center text-orange-600">
+                      {Math.round(todoCapacity.todoCapacities.reduce((sum, item) => sum + item.releaseManagementHours, 0))}h
+                    </td>
+                    <td className="text-center text-red-600">
+                      {Math.round(todoCapacity.todoCapacities.reduce((sum, item) => sum + item.devSupportHours, 0))}h
+                    </td>
+                    <td className="text-center text-purple-600">
+                      {Math.round(todoCapacity.todoCapacities.reduce((sum, item) => sum + item.technicalAnalysisHours, 0))}h
                     </td>
                     <td className="text-center text-gray-900 font-bold">
                       {Math.round(todoCapacity.todoCapacities.reduce((sum, item) => sum + item.totalHours, 0))}h
@@ -487,7 +525,7 @@ const Dashboard: React.FC = () => {
               </span>
             </h3>
             <p className="text-sm text-gray-600 mt-1">
-              Total capacity allocation by TODO priority (Backend + Frontend + Release Management + Prod Support + Technical Analysis)
+              Total capacity allocation by TODO priority (Backend + Frontend + Code Review + Release Management + Prod Support + Technical Analysis)
             </p>
           </div>
           <div className="card-body">
@@ -498,6 +536,10 @@ const Dashboard: React.FC = () => {
                     <th className="text-left">TODO Priority</th>
                     <th className="text-center">Backend Hours</th>
                     <th className="text-center">Frontend Hours</th>
+                    <th className="text-center">Code Review Hours</th>
+                    <th className="text-center">Release Mgmt Hours</th>
+                    <th className="text-center">Prod Support Hours</th>
+                    <th className="text-center">Analysis Hours</th>
                     <th className="text-center">Total Hours</th>
                     <th className="text-center">Developers</th>
                     <th className="text-left">Team Members</th>
@@ -524,6 +566,26 @@ const Dashboard: React.FC = () => {
                         </span>
                       </td>
                       <td className="text-center">
+                        <span className="text-indigo-600 font-medium">
+                          {Math.round(item.codeReviewHours)}h
+                        </span>
+                      </td>
+                      <td className="text-center">
+                        <span className="text-orange-600 font-medium">
+                          {Math.round(item.releaseManagementHours)}h
+                        </span>
+                      </td>
+                      <td className="text-center">
+                        <span className="text-red-600 font-medium">
+                          {Math.round(item.devSupportHours)}h
+                        </span>
+                      </td>
+                      <td className="text-center">
+                        <span className="text-purple-600 font-medium">
+                          {Math.round(item.technicalAnalysisHours)}h
+                        </span>
+                      </td>
+                      <td className="text-center">
                         <span className="text-gray-900 font-bold">
                           {Math.round(item.totalHours)}h
                         </span>
@@ -535,9 +597,11 @@ const Dashboard: React.FC = () => {
                       </td>
                       <td className="text-left">
                         <div className="max-w-xs">
-                          <div className="text-sm text-gray-600 truncate" title={item.users.join(', ')}>
-                            {item.users.join(', ')}
-                          </div>
+                          {item.users.map((user, userIndex) => (
+                            <div key={userIndex} className="text-sm text-gray-600">
+                              {user}
+                            </div>
+                          ))}
                         </div>
                       </td>
                     </tr>
@@ -551,6 +615,18 @@ const Dashboard: React.FC = () => {
                     </td>
                     <td className="text-center text-green-600">
                       {Math.round(nextWeekTodoCapacity.todoCapacities.reduce((sum, item) => sum + item.frontendHours, 0))}h
+                    </td>
+                    <td className="text-center text-indigo-600">
+                      {Math.round(nextWeekTodoCapacity.todoCapacities.reduce((sum, item) => sum + item.codeReviewHours, 0))}h
+                    </td>
+                    <td className="text-center text-orange-600">
+                      {Math.round(nextWeekTodoCapacity.todoCapacities.reduce((sum, item) => sum + item.releaseManagementHours, 0))}h
+                    </td>
+                    <td className="text-center text-red-600">
+                      {Math.round(nextWeekTodoCapacity.todoCapacities.reduce((sum, item) => sum + item.devSupportHours, 0))}h
+                    </td>
+                    <td className="text-center text-purple-600">
+                      {Math.round(nextWeekTodoCapacity.todoCapacities.reduce((sum, item) => sum + item.technicalAnalysisHours, 0))}h
                     </td>
                     <td className="text-center text-gray-900 font-bold">
                       {Math.round(nextWeekTodoCapacity.todoCapacities.reduce((sum, item) => sum + item.totalHours, 0))}h
