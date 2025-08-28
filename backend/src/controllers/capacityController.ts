@@ -540,10 +540,13 @@ export const getTodoCapacityAggregation = async (req: AuthRequest, res: Response
       const workingDays = await calculateWorkingDays(allocation.userId, currentWeek);
       const maxHours = workingDays * HOURS_PER_DAY * DEFAULT_PACE_FACTOR;
       
-      // Calculate backend and frontend hours
+      // Calculate all relevant category hours
       const backendHours = maxHours * (allocation.backendDevelopment / 100);
       const frontendHours = maxHours * (allocation.frontendDevelopment / 100);
-      const totalAllocatedHours = backendHours + frontendHours;
+      const releaseManagementHours = maxHours * (allocation.releaseManagement / 100);
+      const devSupportHours = maxHours * (allocation.devSupport / 100);
+      const technicalAnalysisHours = maxHours * (allocation.technicalAnalysis / 100);
+      const totalAllocatedHours = backendHours + frontendHours + releaseManagementHours + devSupportHours + technicalAnalysisHours;
 
       if (!todoAggregation.has(priorityKey)) {
         todoAggregation.set(priorityKey, {
@@ -633,10 +636,13 @@ export const getNextWeekTodoCapacityAggregation = async (req: AuthRequest, res: 
       const workingDays = await calculateWorkingDays(allocation.userId, nextWeek);
       const maxHours = workingDays * HOURS_PER_DAY * DEFAULT_PACE_FACTOR;
       
-      // Calculate backend and frontend hours
+      // Calculate all relevant category hours
       const backendHours = maxHours * (allocation.backendDevelopment / 100);
       const frontendHours = maxHours * (allocation.frontendDevelopment / 100);
-      const totalAllocatedHours = backendHours + frontendHours;
+      const releaseManagementHours = maxHours * (allocation.releaseManagement / 100);
+      const devSupportHours = maxHours * (allocation.devSupport / 100);
+      const technicalAnalysisHours = maxHours * (allocation.technicalAnalysis / 100);
+      const totalAllocatedHours = backendHours + frontendHours + releaseManagementHours + devSupportHours + technicalAnalysisHours;
       
       if (!todoAggregation.has(priorityKey)) {
         todoAggregation.set(priorityKey, {

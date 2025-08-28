@@ -397,7 +397,7 @@ const Dashboard: React.FC = () => {
               </span>
             </h3>
             <p className="text-sm text-gray-600 mt-1">
-              Development capacity allocation by TODO priority (Backend + Frontend hours only)
+              Total capacity allocation by TODO priority (Backend + Frontend + Release Management + Prod Support + Technical Analysis)
             </p>
           </div>
           <div className="card-body">
@@ -408,7 +408,7 @@ const Dashboard: React.FC = () => {
                     <th className="text-left">TODO Priority</th>
                     <th className="text-center">Backend Hours</th>
                     <th className="text-center">Frontend Hours</th>
-                    <th className="text-center">Total Dev Hours</th>
+                    <th className="text-center">Total Hours</th>
                     <th className="text-center">Developers</th>
                     <th className="text-left">Team Members</th>
                   </tr>
@@ -487,7 +487,7 @@ const Dashboard: React.FC = () => {
               </span>
             </h3>
             <p className="text-sm text-gray-600 mt-1">
-              Development capacity allocation by TODO priority (Backend + Frontend hours only)
+              Total capacity allocation by TODO priority (Backend + Frontend + Release Management + Prod Support + Technical Analysis)
             </p>
           </div>
           <div className="card-body">
@@ -498,7 +498,7 @@ const Dashboard: React.FC = () => {
                     <th className="text-left">TODO Priority</th>
                     <th className="text-center">Backend Hours</th>
                     <th className="text-center">Frontend Hours</th>
-                    <th className="text-center">Total Dev Hours</th>
+                    <th className="text-center">Total Hours</th>
                     <th className="text-center">Developers</th>
                     <th className="text-left">Team Members</th>
                   </tr>
