@@ -25,6 +25,7 @@ import {
   copyFromPreviousWeek,
   getJiraTickets,
   getTodoCapacityAggregation,
+  getNextWeekTodoCapacityAggregation,
   extractHistoricalCapacity,
   exportHistoricalCapacityToExcel
 } from '../controllers/capacityController';
@@ -34,6 +35,7 @@ const router = express.Router();
 router.get('/allocations', authenticate, getAllocations);
 router.get('/team-overview', getTeamCapacityOverview); // Public access for dashboard
 router.get('/todo-capacity', authenticate, getTodoCapacityAggregation);
+router.get('/next-week-todo-capacity', authenticate, getNextWeekTodoCapacityAggregation);
 router.get('/jira-tickets', authenticate, getJiraTickets);
 router.get('/extract-historical', authenticate, authorize('ADMIN', 'MANAGER', 'VIEW_ONLY'), extractHistoricalCapacity);
 router.get('/export-excel', authenticate, authorize('ADMIN', 'MANAGER', 'VIEW_ONLY'), exportHistoricalCapacityToExcel);

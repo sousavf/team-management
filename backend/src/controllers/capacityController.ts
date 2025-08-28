@@ -582,6 +582,99 @@ export const getTodoCapacityAggregation = async (req: AuthRequest, res: Response
   }
 };
 
+export const getNextWeekTodoCapacityAggregation = async (req: AuthRequest, res: Response) => {
+  try {
+    // Get next week (current week + 1)
+    const currentWeek = startOfWeek(new Date(), { weekStartsOn: 1 });
+    const nextWeek = addWeeks(currentWeek, 1);
+    
+    // Get all allocations for next week with TODO priorities
+    const allocations = await prisma.allocation.findMany({
+      where: {
+        weekStart: nextWeek,
+        weeklyPriority: {
+          not: null
+        },
+        user: {
+          role: {
+            notIn: ['ADMIN', 'MANAGER', 'VIEW_ONLY', 'TESTER', 'QA_MANAGER']
+          }
+        }
+      },
+      include: {
+        user: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            role: true
+          }
+        }
+      }
+    });
+    
+    // Group allocations by TODO priority (case insensitive)
+    const todoAggregation = new Map<string, {
+      priority: string;
+      backendHours: number;
+      frontendHours: number;
+      totalHours: number;
+      userCount: number;
+      users: string[];
+    }>();
+    
+    for (const allocation of allocations) {
+      if (!allocation.weeklyPriority?.trim()) continue;
+      
+      const priority = allocation.weeklyPriority.trim();
+      const priorityKey = priority.toLowerCase();
+      
+      // Calculate working days and hours for this user
+      const workingDays = await calculateWorkingDays(allocation.userId, nextWeek);
+      const maxHours = workingDays * HOURS_PER_DAY * DEFAULT_PACE_FACTOR;
+      
+      // Calculate backend and frontend hours
+      const backendHours = maxHours * (allocation.backendDevelopment / 100);
+      const frontendHours = maxHours * (allocation.frontendDevelopment / 100);
+      const totalAllocatedHours = backendHours + frontendHours;
+      
+      if (!todoAggregation.has(priorityKey)) {
+        todoAggregation.set(priorityKey, {
+          priority: priority, // Use original case for display
+          backendHours: 0,
+          frontendHours: 0,
+          totalHours: 0,
+          userCount: 0,
+          users: []
+        });
+      }
+      
+      const existing = todoAggregation.get(priorityKey)!;
+      existing.backendHours += backendHours;
+      existing.frontendHours += frontendHours;
+      existing.totalHours += totalAllocatedHours;
+      
+      if (!existing.users.includes(allocation.user.name)) {
+        existing.users.push(allocation.user.name);
+        existing.userCount++;
+      }
+    }
+    
+    // Convert to array and sort by total hours descending
+    const result = Array.from(todoAggregation.values())
+      .sort((a, b) => b.totalHours - a.totalHours);
+    
+    res.json({
+      weekStart: format(nextWeek, 'yyyy-MM-dd'),
+      totalAllocations: allocations.length,
+      todoCapacities: result
+    });
+  } catch (error) {
+    console.error('Error getting next week TODO capacity aggregation:', error);
+    res.status(500).json({ error: 'Server error' });
+  }
+};
+
 export const extractHistoricalCapacity = async (req: AuthRequest, res: Response) => {
   try {
     const { startWeek, endWeek, userIds, includeNotes = true } = req.query;

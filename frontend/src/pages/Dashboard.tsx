@@ -30,6 +30,7 @@ const Dashboard: React.FC = () => {
   const { state } = useAuth();
   const [teamOverview, setTeamOverview] = useState<TeamCapacityOverview[]>([]);
   const [todoCapacity, setTodoCapacity] = useState<TodoCapacityAggregation | null>(null);
+  const [nextWeekTodoCapacity, setNextWeekTodoCapacity] = useState<TodoCapacityAggregation | null>(null);
   const [pendingRequests, setPendingRequests] = useState<number>(0);
   const [loading, setLoading] = useState(true);
   const [categoryFilter, setCategoryFilter] = useState<string>('all');
@@ -49,17 +50,19 @@ const Dashboard: React.FC = () => {
       setLoading(true);
       const currentWeek = startOfWeek(new Date(), { weekStartsOn: 1 });
       
-      const [overviewResponse, todoResponse, timeOffResponse] = await Promise.all([
+      const [overviewResponse, todoResponse, nextWeekTodoResponse, timeOffResponse] = await Promise.all([
         capacityApi.getTeamOverview({
           weekStart: format(currentWeek, 'yyyy-MM-dd'),
           weeks: 4
         }),
         capacityApi.getTodoCapacity(),
+        capacityApi.getNextWeekTodoCapacity(),
         timeOffApi.getPendingCount()
       ]);
 
       setTeamOverview(overviewResponse.data);
       setTodoCapacity(todoResponse.data);
+      setNextWeekTodoCapacity(nextWeekTodoResponse.data);
       setPendingRequests(timeOffResponse.data.count);
     } catch (error) {
       toast.error('Failed to load dashboard data');
@@ -464,6 +467,96 @@ const Dashboard: React.FC = () => {
                     </td>
                     <td className="text-center">
                       {todoCapacity.todoCapacities.reduce((sum, item) => sum + item.userCount, 0)}
+                    </td>
+                    <td></td>
+                  </tr>
+                </tfoot>
+              </table>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {nextWeekTodoCapacity && nextWeekTodoCapacity.todoCapacities.length > 0 && (
+        <div className="card">
+          <div className="card-header">
+            <h3 className="text-lg font-medium text-gray-900">
+              Next Week TODO Priorities 
+              <span className="text-sm font-normal text-gray-600 ml-2">
+                (Week of {format(new Date(nextWeekTodoCapacity.weekStart), 'MMM dd, yyyy')})
+              </span>
+            </h3>
+            <p className="text-sm text-gray-600 mt-1">
+              Development capacity allocation by TODO priority (Backend + Frontend hours only)
+            </p>
+          </div>
+          <div className="card-body">
+            <div className="overflow-x-auto">
+              <table className="table">
+                <thead>
+                  <tr>
+                    <th className="text-left">TODO Priority</th>
+                    <th className="text-center">Backend Hours</th>
+                    <th className="text-center">Frontend Hours</th>
+                    <th className="text-center">Total Dev Hours</th>
+                    <th className="text-center">Developers</th>
+                    <th className="text-left">Team Members</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {nextWeekTodoCapacity.todoCapacities.map((item, index) => (
+                    <tr key={index} className={index % 2 === 0 ? 'bg-gray-50' : 'bg-white'}>
+                      <td className="font-medium text-gray-900">
+                        <div className="max-w-xs">
+                          <div className="truncate" title={item.priority}>
+                            {item.priority}
+                          </div>
+                        </div>
+                      </td>
+                      <td className="text-center">
+                        <span className="text-blue-600 font-medium">
+                          {Math.round(item.backendHours)}h
+                        </span>
+                      </td>
+                      <td className="text-center">
+                        <span className="text-green-600 font-medium">
+                          {Math.round(item.frontendHours)}h
+                        </span>
+                      </td>
+                      <td className="text-center">
+                        <span className="text-gray-900 font-bold">
+                          {Math.round(item.totalHours)}h
+                        </span>
+                      </td>
+                      <td className="text-center">
+                        <span className="badge badge-primary">
+                          {item.userCount}
+                        </span>
+                      </td>
+                      <td className="text-left">
+                        <div className="max-w-xs">
+                          <div className="text-sm text-gray-600 truncate" title={item.users.join(', ')}>
+                            {item.users.join(', ')}
+                          </div>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+                <tfoot>
+                  <tr className="bg-gray-100 font-medium">
+                    <td className="text-gray-900">Total</td>
+                    <td className="text-center text-blue-600">
+                      {Math.round(nextWeekTodoCapacity.todoCapacities.reduce((sum, item) => sum + item.backendHours, 0))}h
+                    </td>
+                    <td className="text-center text-green-600">
+                      {Math.round(nextWeekTodoCapacity.todoCapacities.reduce((sum, item) => sum + item.frontendHours, 0))}h
+                    </td>
+                    <td className="text-center text-gray-900 font-bold">
+                      {Math.round(nextWeekTodoCapacity.todoCapacities.reduce((sum, item) => sum + item.totalHours, 0))}h
+                    </td>
+                    <td className="text-center">
+                      {nextWeekTodoCapacity.todoCapacities.reduce((sum, item) => sum + item.userCount, 0)}
                     </td>
                     <td></td>
                   </tr>
