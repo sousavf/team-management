@@ -43,13 +43,11 @@ const Navbar: React.FC = () => {
   };
 
   // Navigation items available to all users (including public)
-  const publicNavigationItems = [
-    { name: 'Dashboard', href: '/dashboard', icon: ChartBarIcon },
+  const publicNavigationItems: Array<{ name: string; href: string; icon: any }> = [
   ];
 
   // Additional navigation items for authenticated users
   const authenticatedNavigationItems = [
-    { name: 'Team Capacity', href: '/capacity', icon: UsersIcon },
     { name: 'Holiday Calendar', href: '/holiday-calendar', icon: CalendarIcon },
   ];
 
@@ -82,7 +80,7 @@ const Navbar: React.FC = () => {
           <div className="flex justify-between h-16">
           <div className="flex">
             <div className="flex-shrink-0 flex items-center">
-              <Link to="/dashboard" className="text-xl font-bold text-gray-800">
+              <Link to="/holiday-calendar" className="text-xl font-bold text-gray-800">
                 Team Manager
               </Link>
             </div>

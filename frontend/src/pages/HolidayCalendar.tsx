@@ -34,6 +34,7 @@ const HolidayCalendar: React.FC = () => {
   const { state } = useAuth();
   const [users, setUsers] = useState<User[]>([]);
   const [timeOffRequests, setTimeOffRequests] = useState<TimeOffRequest[]>([]);
+  const [pendingRequests, setPendingRequests] = useState<number>(0);
   const [loading, setLoading] = useState(true);
   const [currentWeek, setCurrentWeek] = useState(startOfWeek(new Date(), { weekStartsOn: 1 }));
   const [weeksToShow, setWeeksToShow] = useState(4);
@@ -45,13 +46,14 @@ const HolidayCalendar: React.FC = () => {
   const fetchData = async () => {
     try {
       setLoading(true);
-      const [usersResponse, timeOffResponse] = await Promise.all([
+      const [usersResponse, timeOffResponse, pendingResponse] = await Promise.all([
         userApi.getUsers(),
-        timeOffApi.getCalendarRequests({})
+        timeOffApi.getCalendarRequests({}),
+        timeOffApi.getPendingCount()
       ]);
 
       // Filter out admin and view-only users (but include managers, developers, and testers)
-      const developers = usersResponse.data.filter((user: User) => 
+      const developers = usersResponse.data.filter((user: User) =>
         user.role !== 'ADMIN' && user.role !== 'VIEW_ONLY'
       ).sort((a: User, b: User) => {
         // First sort by role
@@ -64,6 +66,7 @@ const HolidayCalendar: React.FC = () => {
       });
       setUsers(developers);
       setTimeOffRequests(timeOffResponse.data);
+      setPendingRequests(pendingResponse.data.count);
     } catch (error) {
       toast.error('Failed to load holiday calendar data');
     } finally {
@@ -212,6 +215,26 @@ const HolidayCalendar: React.FC = () => {
           </button>
         </div>
       </div>
+
+      {(state.user?.role === 'ADMIN' || state.user?.role === 'MANAGER' || state.user?.role === 'QA_MANAGER') && (
+        <div className="card">
+          <div className="card-body">
+            <div className="flex items-center">
+              <div className="flex-shrink-0">
+                <div className="w-8 h-8 bg-red-500 rounded-full flex items-center justify-center">
+                  <span className="text-white font-bold">P</span>
+                </div>
+              </div>
+              <div className="ml-4">
+                <div className="text-sm font-medium text-gray-500">Pending Requests</div>
+                <div className="text-2xl font-bold text-gray-900">
+                  {pendingRequests}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       <div className="card">
         <div className="card-body overflow-x-auto">
