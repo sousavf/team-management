@@ -122,27 +122,6 @@ export interface TimeOffRequestCreate {
   reason?: string;
 }
 
-export interface JiraTicket {
-  key: string;
-  summary: string;
-  url: string;
-  issueType: string;
-  sprint: string;
-}
-
-export interface UserJiraTickets {
-  userId: string;
-  name: string;
-  email: string;
-  tickets: JiraTicket[];
-}
-
-export interface JiraTicketsResponse {
-  enabled: boolean;
-  message?: string;
-  userTickets: UserJiraTickets[];
-}
-
 export interface TodoCapacityItem {
   priority: string;
   backendHours: number;

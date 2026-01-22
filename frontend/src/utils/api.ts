@@ -74,15 +74,14 @@ export const capacityApi = {
   getTeamOverview: (params?: any) => api.get('/capacity/team-overview', { params }),
   getTodoCapacity: () => api.get('/capacity/todo-capacity'),
   getNextWeekTodoCapacity: () => api.get('/capacity/next-week-todo-capacity'),
-  getJiraTickets: () => api.get('/capacity/jira-tickets'),
   updateAllocation: (userId: string, weekStart: string, data: any) =>
     api.put(`/capacity/allocations/${userId}/${weekStart}`, data),
   copyFromPreviousWeek: (weekStart: string) =>
     api.post('/capacity/copy-from-previous-week', { weekStart }),
   extractHistoricalCapacity: (params?: any) => api.get('/capacity/extract-historical', { params }),
-  exportToExcel: (params?: any) => api.get('/capacity/export-excel', { 
-    params, 
-    responseType: 'blob' 
+  exportToExcel: (params?: any) => api.get('/capacity/export-excel', {
+    params,
+    responseType: 'blob'
   }),
 };
 

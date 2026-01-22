@@ -20,7 +20,6 @@ import { Response } from 'express';
 import { PrismaClient } from '@prisma/client';
 import { AuthRequest } from '../middleware/auth';
 import { startOfWeek, addWeeks, format, parseISO, isWithinInterval, addDays } from 'date-fns';
-import { jiraService } from '../services/jiraService';
 import * as ExcelJS from 'exceljs';
 
 const prisma = new PrismaClient();
@@ -440,52 +439,6 @@ export const getTeamCapacityOverview = async (req: AuthRequest, res: Response) =
     res.json(weeklyOverview);
   } catch (error) {
     console.error(error);
-    res.status(500).json({ error: 'Server error' });
-  }
-};
-
-export const getJiraTickets = async (req: AuthRequest, res: Response) => {
-  try {
-    if (!jiraService.isEnabled()) {
-      return res.json({ 
-        enabled: false, 
-        message: 'JIRA integration is not configured',
-        userTickets: []
-      });
-    }
-
-    const users = await prisma.user.findMany({
-      where: {
-        role: {
-          notIn: ['ADMIN', 'MANAGER', 'VIEW_ONLY', 'TESTER', 'QA_MANAGER']
-        }
-      },
-      select: {
-        id: true,
-        name: true,
-        email: true
-      }
-    });
-
-    const userTickets = users.map(user => ({
-      userId: user.id,
-      name: user.name,
-      email: user.email,
-      tickets: jiraService.getTicketsForUser(user.email).map(ticket => ({
-        key: ticket.key,
-        summary: ticket.summary,
-        url: jiraService.getJiraTicketUrl(ticket.key),
-        issueType: ticket.issueType,
-        sprint: ticket.sprint
-      }))
-    }));
-
-    res.json({
-      enabled: true,
-      userTickets
-    });
-  } catch (error) {
-    console.error('Error getting JIRA tickets:', error);
     res.status(500).json({ error: 'Server error' });
   }
 };
