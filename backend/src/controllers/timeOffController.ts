@@ -17,11 +17,23 @@
  */
 
 import { Response } from 'express';
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient, Role } from '@prisma/client';
 import { AuthRequest } from '../middleware/auth';
 import { body, validationResult } from 'express-validator';
+import { emailService } from '../services/emailService';
 
 const prisma = new PrismaClient();
+
+async function findManagerForRole(employeeRole: Role): Promise<{ id: string; email: string; name: string } | null> {
+  const managerRole = employeeRole === 'TESTER' ? 'QA_MANAGER' : 'MANAGER';
+
+  const manager = await prisma.user.findFirst({
+    where: { role: managerRole },
+    select: { id: true, email: true, name: true }
+  });
+
+  return manager;
+}
 
 export const createTimeOffRequestValidation = [
   body('startDate').isISO8601().toDate(),
@@ -271,6 +283,25 @@ export const createTimeOffRequest = async (req: AuthRequest, res: Response) => {
       }
     });
 
+    // Send email notification to manager for PENDING requests
+    if (status === 'PENDING') {
+      const manager = await findManagerForRole(req.user!.role as Role);
+      if (manager) {
+        emailService.sendNewRequestNotification(
+          { email: manager.email, name: manager.name },
+          {
+            id: request.id,
+            employeeName: request.user.name,
+            employeeEmail: request.user.email,
+            startDate: request.startDate,
+            endDate: request.endDate,
+            type: request.type,
+            reason: request.reason
+          }
+        );
+      }
+    }
+
     res.status(201).json(request);
   } catch (error) {
     console.error(error);
@@ -366,6 +397,25 @@ export const updateTimeOffRequest = async (req: AuthRequest, res: Response) => {
       }
     });
 
+    // Send email notification to the requestor
+    const requestInfo = {
+      id: updatedRequest.id,
+      employeeName: updatedRequest.user.name,
+      employeeEmail: updatedRequest.user.email,
+      startDate: updatedRequest.startDate,
+      endDate: updatedRequest.endDate,
+      type: updatedRequest.type,
+      reason: updatedRequest.reason
+    };
+    const employee = { email: updatedRequest.user.email, name: updatedRequest.user.name };
+    const approverName = updatedRequest.approver?.name || 'Manager';
+
+    if (status === 'APPROVED') {
+      emailService.sendApprovalNotification(employee, requestInfo, approverName);
+    } else if (status === 'REJECTED') {
+      emailService.sendRejectionNotification(employee, requestInfo, approverName);
+    }
+
     res.json(updatedRequest);
   } catch (error) {
     console.error(error);
@@ -438,6 +488,24 @@ export const cancelTimeOffRequest = async (req: AuthRequest, res: Response) => {
         }
       }
     });
+
+    // Send email notification to manager about cancellation
+    const manager = await findManagerForRole(updatedRequest.user.role as Role);
+    if (manager) {
+      emailService.sendCancellationNotification(
+        { email: manager.email, name: manager.name },
+        {
+          id: updatedRequest.id,
+          employeeName: updatedRequest.user.name,
+          employeeEmail: updatedRequest.user.email,
+          startDate: updatedRequest.startDate,
+          endDate: updatedRequest.endDate,
+          type: updatedRequest.type,
+          reason: updatedRequest.reason
+        },
+        cancellationReason
+      );
+    }
 
     res.json(updatedRequest);
   } catch (error) {
