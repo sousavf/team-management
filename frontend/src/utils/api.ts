@@ -1,21 +1,3 @@
-/*
- * Team Management System
- * Copyright (C) 2025
- * 
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- * 
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <https://www.gnu.org/licenses/>.
- */
-
 import axios from 'axios';
 
 const API_BASE_URL = process.env.REACT_APP_API_URL || '/api';
@@ -55,12 +37,15 @@ api.interceptors.response.use(
 export const authApi = {
   login: (email: string, password: string) =>
     api.post('/auth/login', { email, password }),
-  register: (email: string, name: string, password: string, role?: string) =>
-    api.post('/auth/register', { email, name, password, role }),
+  forgotPassword: (email: string) =>
+    api.post('/auth/forgot-password', { email }),
+  resetPassword: (token: string, password: string) =>
+    api.post('/auth/reset-password', { token, password }),
 };
 
 export const userApi = {
   getUsers: () => api.get('/users'),
+  getPublicUsers: () => api.get('/users/public'),
   getUser: (id: string) => api.get(`/users/${id}`),
   getCurrentUser: () => api.get('/users/me'),
   createUser: (userData: any) => api.post('/users', userData),
@@ -88,6 +73,7 @@ export const capacityApi = {
 export const timeOffApi = {
   getRequests: (params?: any) => api.get('/time-off', { params }),
   getCalendarRequests: (params?: any) => api.get('/time-off/calendar', { params }),
+  getPublicCalendarRequests: (params?: any) => api.get('/time-off/calendar/public', { params }),
   getPendingCount: () => api.get('/time-off/dashboard/pending-count'),
   createRequest: (data: any) => api.post('/time-off', data),
   createAdminHoliday: (data: any) => api.post('/time-off/admin/create-holiday', data),

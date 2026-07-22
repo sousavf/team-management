@@ -1,21 +1,3 @@
-/*
- * Team Management System
- * Copyright (C) 2025
- *
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <https://www.gnu.org/licenses/>.
- */
-
 import nodemailer from 'nodemailer';
 import { Transporter } from 'nodemailer';
 
@@ -40,7 +22,7 @@ class EmailService {
   private fromEmail: string;
 
   constructor() {
-    this.fromName = process.env.SMTP_FROM_NAME || 'Team Management';
+    this.fromName = process.env.SMTP_FROM_NAME || 'Holiday Planner';
     this.fromEmail = process.env.SMTP_FROM_EMAIL || 'noreply@example.com';
 
     if (this.isConfigured()) {
@@ -139,7 +121,7 @@ class EmailService {
         </tr>
         ` : ''}
       </table>
-      <p>Please log in to the Team Management system to approve or reject this request.</p>
+      <p>Please log in to Holiday Planner to approve or reject this request.</p>
       <p>Best regards,<br>${this.fromName}</p>
     `;
 
@@ -242,6 +224,28 @@ class EmailService {
     `;
 
     this.sendEmail(employee.email, subject, html);
+  }
+
+  async sendPasswordResetEmail(
+    recipient: EmailRecipient,
+    resetLink: string,
+    expiryMinutes: number
+  ): Promise<void> {
+    const subject = 'Reset your Holiday Planner password';
+    const html = `
+      <h2>Password Reset Request</h2>
+      <p>Hi ${recipient.name},</p>
+      <p>We received a request to reset the password for your Holiday Planner account.</p>
+      <p style="margin: 24px 0;">
+        <a href="${resetLink}" style="background:#4f46e5;color:#ffffff;padding:12px 20px;border-radius:8px;text-decoration:none;font-weight:600;">Reset Password</a>
+      </p>
+      <p>Or paste this link into your browser:</p>
+      <p><a href="${resetLink}">${resetLink}</a></p>
+      <p>This link expires in ${expiryMinutes} minutes. If you didn't request a password reset, you can safely ignore this email — your password won't change.</p>
+      <p>Best regards,<br>${this.fromName}</p>
+    `;
+
+    await this.sendEmail(recipient.email, subject, html);
   }
 
   isEnabled(): boolean {

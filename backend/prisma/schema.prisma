@@ -67,6 +67,8 @@ model User {
   name              String
   password          String
   role              Role             @default(DEVELOPER)
+  resetToken        String?
+  resetTokenExpiry  DateTime?
   createdAt         DateTime         @default(now())
   updatedAt         DateTime         @updatedAt
   allocations       Allocation[]
