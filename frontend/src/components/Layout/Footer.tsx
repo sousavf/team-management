@@ -1,28 +1,11 @@
-/*
- * Team Management System
- * Copyright (C) 2025
- * 
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- * 
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <https://www.gnu.org/licenses/>.
- */
-
 import React from 'react';
 
 const Footer: React.FC = () => {
   return (
-    <footer className="bg-gray-800 text-white py-4 mt-auto">
-      <div className="container mx-auto px-4 text-center">
-        <p className="text-sm">
+    <footer className="mt-auto border-t border-gray-200 bg-white py-5">
+      <div className="container flex flex-col items-center justify-between gap-2 text-center sm:flex-row sm:text-left">
+        <span className="font-display text-sm font-semibold text-gray-700">Holiday Planner</span>
+        <p className="text-xs text-gray-400">
           © {new Date().getFullYear()} Developed by Vasco Sousa. All rights reserved.
         </p>
       </div>

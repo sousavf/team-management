@@ -1,25 +1,8 @@
-/*
- * Team Management System
- * Copyright (C) 2025
- * 
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- * 
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <https://www.gnu.org/licenses/>.
- */
-
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
+import AuthShell from '../components/AuthShell';
 
 const Login: React.FC = () => {
   const [email, setEmail] = useState('');
@@ -29,7 +12,7 @@ const Login: React.FC = () => {
 
   useEffect(() => {
     if (state.user) {
-      navigate('/dashboard');
+      navigate('/holiday-calendar');
     }
   }, [state.user, navigate]);
 
@@ -45,61 +28,66 @@ const Login: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-md w-full space-y-8">
+    <AuthShell
+      title="Welcome back"
+      subtitle="Sign in to manage time off and team availability."
+      footer={
+        <>
+          Just here to check the calendar?{' '}
+          <Link to="/holiday-calendar" className="font-medium text-primary-600 hover:text-primary-700">
+            View it without signing in
+          </Link>
+        </>
+      }
+    >
+      <form className="space-y-5" onSubmit={handleSubmit}>
         <div>
-          <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
-            Sign in to Team Manager
-          </h2>
+          <label htmlFor="email" className="label">
+            Email address
+          </label>
+          <input
+            id="email"
+            name="email"
+            type="email"
+            autoComplete="email"
+            required
+            className="input"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            placeholder="you@company.com"
+          />
         </div>
-        <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
-          <div className="space-y-4">
-            <div>
-              <label htmlFor="email" className="label">
-                Email address
-              </label>
-              <input
-                id="email"
-                name="email"
-                type="email"
-                autoComplete="email"
-                required
-                className="input"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="Email address"
-              />
-            </div>
-            <div>
-              <label htmlFor="password" className="label">
-                Password
-              </label>
-              <input
-                id="password"
-                name="password"
-                type="password"
-                autoComplete="current-password"
-                required
-                className="input"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="Password"
-              />
-            </div>
-          </div>
 
-          <div>
-            <button
-              type="submit"
-              disabled={state.isLoading}
-              className="btn-primary w-full"
+        <div>
+          <div className="flex items-center justify-between">
+            <label htmlFor="password" className="label mb-0">
+              Password
+            </label>
+            <Link
+              to="/forgot-password"
+              className="text-sm font-medium text-primary-600 hover:text-primary-700"
             >
-              {state.isLoading ? 'Signing in...' : 'Sign in'}
-            </button>
+              Forgot password?
+            </Link>
           </div>
-        </form>
-      </div>
-    </div>
+          <input
+            id="password"
+            name="password"
+            type="password"
+            autoComplete="current-password"
+            required
+            className="input"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            placeholder="••••••••"
+          />
+        </div>
+
+        <button type="submit" disabled={state.isLoading} className="btn-primary w-full">
+          {state.isLoading ? 'Signing in…' : 'Sign in'}
+        </button>
+      </form>
+    </AuthShell>
   );
 };
 

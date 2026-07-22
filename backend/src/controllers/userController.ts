@@ -1,21 +1,3 @@
-/*
- * Team Management System
- * Copyright (C) 2025
- * 
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- * 
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <https://www.gnu.org/licenses/>.
- */
-
 import { Response } from 'express';
 import { PrismaClient } from '@prisma/client';
 import { AuthRequest } from '../middleware/auth';
@@ -53,6 +35,27 @@ export const getUsers = async (req: AuthRequest, res: Response) => {
         role: true,
         createdAt: true,
         updatedAt: true
+      },
+      orderBy: { name: 'asc' }
+    });
+
+    res.json(users);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Server error' });
+  }
+};
+
+// Public roster for the logged-out calendar: only the people shown on the
+// calendar (no admins / view-only accounts) and only non-sensitive fields.
+export const getPublicUsers = async (_req: AuthRequest, res: Response) => {
+  try {
+    const users = await prisma.user.findMany({
+      where: { role: { notIn: ['ADMIN', 'VIEW_ONLY'] } },
+      select: {
+        id: true,
+        name: true,
+        role: true
       },
       orderBy: { name: 'asc' }
     });

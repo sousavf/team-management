@@ -1,28 +1,11 @@
-/*
- * Team Management System
- * Copyright (C) 2025
- * 
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- * 
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <https://www.gnu.org/licenses/>.
- */
-
 import React, { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import { User, TimeOffRequest } from '../types';
 import { userApi, timeOffApi } from '../utils/api';
-import { format, addDays, startOfWeek, endOfWeek, isWeekend, parseISO, isWithinInterval, isToday } from 'date-fns';
+import { format, addDays, startOfWeek, isWeekend, parseISO, isWithinInterval, isToday } from 'date-fns';
 import { useAuth } from '../context/AuthContext';
 import toast from 'react-hot-toast';
-import { CalendarDaysIcon, ChevronLeftIcon, ChevronRightIcon } from '@heroicons/react/24/outline';
+import { ChevronLeftIcon, ChevronRightIcon } from '@heroicons/react/24/outline';
 
 interface DayInfo {
   date: Date;
@@ -30,8 +13,21 @@ interface DayInfo {
   timeOff?: TimeOffRequest;
 }
 
+const ROLE_ORDER: Record<string, number> = {
+  MANAGER: 1,
+  DEVELOPER: 2,
+  TESTER: 3,
+  QA_MANAGER: 4,
+};
+
 const HolidayCalendar: React.FC = () => {
   const { state } = useAuth();
+  const isAuthenticated = !!state.user;
+  const isPrivileged =
+    state.user?.role === 'ADMIN' ||
+    state.user?.role === 'MANAGER' ||
+    state.user?.role === 'QA_MANAGER';
+
   const [users, setUsers] = useState<User[]>([]);
   const [timeOffRequests, setTimeOffRequests] = useState<TimeOffRequest[]>([]);
   const [pendingRequests, setPendingRequests] = useState<number>(0);
@@ -41,312 +37,276 @@ const HolidayCalendar: React.FC = () => {
 
   useEffect(() => {
     fetchData();
-  }, [currentWeek, weeksToShow]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentWeek, weeksToShow, isAuthenticated]);
 
   const fetchData = async () => {
     try {
       setLoading(true);
-      const [usersResponse, timeOffResponse, pendingResponse] = await Promise.all([
-        userApi.getUsers(),
-        timeOffApi.getCalendarRequests({}),
-        timeOffApi.getPendingCount()
-      ]);
 
-      // Filter out admin and view-only users (but include managers, developers, and testers)
-      const developers = usersResponse.data.filter((user: User) =>
-        user.role !== 'ADMIN' && user.role !== 'VIEW_ONLY'
-      ).sort((a: User, b: User) => {
-        // First sort by role
-        if (a.role !== b.role) {
-          const roleOrder = { 'MANAGER': 1, 'DEVELOPER': 2, 'TESTER': 3, 'QA_MANAGER': 4 };
-          return (roleOrder[a.role as keyof typeof roleOrder] || 999) - (roleOrder[b.role as keyof typeof roleOrder] || 999);
-        }
-        // Then sort alphabetically by name
-        return a.name.localeCompare(b.name);
-      });
-      setUsers(developers);
-      setTimeOffRequests(timeOffResponse.data);
-      setPendingRequests(pendingResponse.data.count);
+      if (isAuthenticated) {
+        const [usersResponse, timeOffResponse, pendingResponse] = await Promise.all([
+          userApi.getUsers(),
+          timeOffApi.getCalendarRequests({}),
+          timeOffApi.getPendingCount(),
+        ]);
+        setUsers(sortMembers(usersResponse.data));
+        setTimeOffRequests(timeOffResponse.data);
+        setPendingRequests(pendingResponse.data.count);
+      } else {
+        const [usersResponse, timeOffResponse] = await Promise.all([
+          userApi.getPublicUsers(),
+          timeOffApi.getPublicCalendarRequests({}),
+        ]);
+        setUsers(sortMembers(usersResponse.data));
+        setTimeOffRequests(timeOffResponse.data);
+      }
     } catch (error) {
-      toast.error('Failed to load holiday calendar data');
+      toast.error('Failed to load the calendar. Please try again.');
     } finally {
       setLoading(false);
     }
   };
 
-  const generateDateRange = () => {
+  const sortMembers = (list: User[]): User[] =>
+    list
+      .filter((user) => user.role !== 'ADMIN' && user.role !== 'VIEW_ONLY')
+      .sort((a, b) => {
+        if (a.role !== b.role) {
+          return (ROLE_ORDER[a.role] || 999) - (ROLE_ORDER[b.role] || 999);
+        }
+        return a.name.localeCompare(b.name);
+      });
+
+  const generateDateRange = (): Date[] => {
     const dates: Date[] = [];
     const endDate = addDays(currentWeek, weeksToShow * 7 - 1);
-    
     for (let date = new Date(currentWeek); date <= endDate; date = addDays(date, 1)) {
       dates.push(new Date(date));
     }
-    
     return dates;
   };
 
   const getDayInfo = (user: User, date: Date): DayInfo => {
-    const dayInfo: DayInfo = {
-      date,
-      isWeekend: isWeekend(date),
-    };
+    const dayInfo: DayInfo = { date, isWeekend: isWeekend(date) };
 
-    // Find time-off request for this user and date
-    const timeOff = timeOffRequests.find(request => {
+    const timeOff = timeOffRequests.find((request) => {
       if (request.userId !== user.id || request.status !== 'APPROVED') {
         return false;
       }
-      
-      // Parse dates and normalize to avoid timezone issues
-      const startDate = parseISO(request.startDate);
-      const endDate = parseISO(request.endDate);
-      
-      // Normalize the check date to midnight for consistent comparison
       const checkDate = new Date(date);
       checkDate.setHours(0, 0, 0, 0);
-      
-      // Normalize start and end dates to midnight
-      const normalizedStart = new Date(startDate);
-      const normalizedEnd = new Date(endDate);
-      normalizedStart.setHours(0, 0, 0, 0);
-      normalizedEnd.setHours(0, 0, 0, 0);
-      
-      return isWithinInterval(checkDate, {
-        start: normalizedStart,
-        end: normalizedEnd
-      });
+      const start = parseISO(request.startDate);
+      const end = parseISO(request.endDate);
+      start.setHours(0, 0, 0, 0);
+      end.setHours(0, 0, 0, 0);
+      return isWithinInterval(checkDate, { start, end });
     });
 
     if (timeOff) {
       dayInfo.timeOff = timeOff;
     }
-
     return dayInfo;
-  };
-
-  const getSquareColor = (dayInfo: DayInfo): string => {
-    if (dayInfo.timeOff) {
-      return 'bg-blue-400';
-    }
-    
-    if (dayInfo.isWeekend) {
-      return 'bg-gray-200';
-    }
-    
-    return 'bg-white border-gray-300';
   };
 
   const getSquareTooltip = (user: User, dayInfo: DayInfo): string => {
     const dateStr = format(dayInfo.date, 'MMM dd, yyyy');
-    
     if (dayInfo.timeOff) {
-      return `${user.name} - ${dayInfo.timeOff.type?.replace('_', ' ') || 'Time Off'} (${dateStr})`;
+      // Leave type is only visible to admins; everyone else just sees "Away".
+      const detail =
+        state.user?.role === 'ADMIN' && dayInfo.timeOff.type
+          ? dayInfo.timeOff.type.replace('_', ' ')
+          : 'Away';
+      return `${user.name} — ${detail} (${dateStr})`;
     }
-    
     if (dayInfo.isWeekend) {
-      return `${user.name} - Weekend (${dateStr})`;
+      return `${user.name} — Weekend (${dateStr})`;
     }
-    
-    return `${user.name} - Working day (${dateStr})`;
+    return `${user.name} — Working day (${dateStr})`;
   };
 
-  const goToPreviousWeek = () => {
-    setCurrentWeek(addDays(currentWeek, -7));
-  };
+  const goToPreviousWeek = () => setCurrentWeek(addDays(currentWeek, -7));
+  const goToNextWeek = () => setCurrentWeek(addDays(currentWeek, 7));
+  const goToCurrentWeek = () => setCurrentWeek(startOfWeek(new Date(), { weekStartsOn: 1 }));
 
-  const goToNextWeek = () => {
-    setCurrentWeek(addDays(currentWeek, 7));
-  };
+  const dates = generateDateRange();
 
-  const goToCurrentWeek = () => {
-    setCurrentWeek(startOfWeek(new Date(), { weekStartsOn: 1 }));
-  };
+  // How many people are away today — the headline the calendar exists to answer.
+  const awayToday = users.filter((user) => getDayInfo(user, new Date()).timeOff).length;
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-64">
-        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary-500"></div>
+      <div className="flex items-center justify-center min-h-[60vh]">
+        <div className="animate-spin rounded-full h-12 w-12 border-2 border-gray-200 border-t-primary-600" />
       </div>
     );
   }
 
-  const dates = generateDateRange();
-
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
+      {/* Header */}
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Absence Calendar</h1>
-          <p className="text-sm text-gray-600 mt-1">
-            Team availability overview - {format(currentWeek, 'MMM dd')} to {format(addDays(currentWeek, weeksToShow * 7 - 1), 'MMM dd, yyyy')}
+          <p className="mt-1 text-sm text-gray-500">
+            {users.length > 0 && (
+              <>
+                <span className="font-medium text-gray-700">{awayToday}</span> of{' '}
+                <span className="font-medium text-gray-700">{users.length}</span> away today ·{' '}
+              </>
+            )}
+            {format(currentWeek, 'MMM d')} – {format(addDays(currentWeek, weeksToShow * 7 - 1), 'MMM d, yyyy')}
           </p>
         </div>
-        <div className="flex items-center space-x-4">
-          <div className="flex items-center space-x-2">
-            <label className="text-sm font-medium text-gray-700">Weeks:</label>
-            <select
-              value={weeksToShow}
-              onChange={(e) => setWeeksToShow(parseInt(e.target.value))}
-              className="border border-gray-300 rounded-md px-3 py-1 text-sm"
-            >
-              <option value={2}>2 weeks</option>
-              <option value={4}>4 weeks</option>
-              <option value={6}>6 weeks</option>
-              <option value={8}>8 weeks</option>
-            </select>
-          </div>
+
+        <div className="flex items-center gap-2">
+          <select
+            value={weeksToShow}
+            onChange={(e) => setWeeksToShow(parseInt(e.target.value))}
+            className="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm shadow-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-200"
+            aria-label="Weeks to show"
+          >
+            <option value={2}>2 weeks</option>
+            <option value={4}>4 weeks</option>
+            <option value={6}>6 weeks</option>
+            <option value={8}>8 weeks</option>
+          </select>
           <button
             onClick={goToPreviousWeek}
-            className="p-2 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-md"
+            className="btn-secondary px-2.5"
+            aria-label="Previous week"
           >
-            <ChevronLeftIcon className="w-5 h-5" />
+            <ChevronLeftIcon className="w-4 h-4" />
           </button>
-          <button
-            onClick={goToCurrentWeek}
-            className="btn-primary text-sm px-3 py-1"
-          >
+          <button onClick={goToCurrentWeek} className="btn-secondary">
             Today
           </button>
-          <button
-            onClick={goToNextWeek}
-            className="p-2 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-md"
-          >
-            <ChevronRightIcon className="w-5 h-5" />
+          <button onClick={goToNextWeek} className="btn-secondary px-2.5" aria-label="Next week">
+            <ChevronRightIcon className="w-4 h-4" />
           </button>
         </div>
       </div>
 
-      {(state.user?.role === 'ADMIN' || state.user?.role === 'MANAGER' || state.user?.role === 'QA_MANAGER') && (
+      {/* Public viewing hint */}
+      {!isAuthenticated && (
+        <div className="rounded-xl border border-primary-100 bg-primary-50 px-4 py-3 text-sm text-primary-800">
+          You're viewing the team's availability publicly.{' '}
+          <Link to="/login" className="font-semibold underline underline-offset-2">
+            Sign in
+          </Link>{' '}
+          to request or manage time off.
+        </div>
+      )}
+
+      {/* Pending requests (managers only) */}
+      {isPrivileged && (
         <div className="card">
-          <div className="card-body">
-            <div className="flex items-center">
-              <div className="flex-shrink-0">
-                <div className="w-8 h-8 bg-red-500 rounded-full flex items-center justify-center">
-                  <span className="text-white font-bold">P</span>
-                </div>
-              </div>
-              <div className="ml-4">
-                <div className="text-sm font-medium text-gray-500">Pending Requests</div>
-                <div className="text-2xl font-bold text-gray-900">
-                  {pendingRequests}
-                </div>
-              </div>
+          <div className="card-body flex items-center gap-4">
+            <div className="flex h-11 w-11 items-center justify-center rounded-lg bg-away-100 text-away-600 font-bold">
+              {pendingRequests}
+            </div>
+            <div>
+              <div className="text-sm font-medium text-gray-500">Pending requests</div>
+              <div className="text-sm text-gray-700">Awaiting your review</div>
             </div>
           </div>
         </div>
       )}
 
+      {/* Calendar grid */}
       <div className="card">
         <div className="card-body overflow-x-auto">
-          <div className="min-w-full">
-            {/* Header row with dates */}
-            <div className="flex mb-4">
-              <div className="w-40 flex-shrink-0 font-medium text-gray-700 py-2">
-                Developer
-              </div>
-              <div className="flex space-x-1">
-                {dates.map((date, index) => (
-                  <div
-                    key={index}
-                    className={`w-8 h-8 flex items-center justify-center text-xs font-medium ${
-                      isToday(date) 
-                        ? 'bg-yellow-100 text-yellow-800 rounded-md' 
-                        : isWeekend(date) 
-                        ? 'text-gray-400' 
-                        : 'text-gray-700'
-                    }`}
-                  >
-                    <div className="text-center">
-                      <div>{format(date, 'd')}</div>
-                      <div className="text-xs">{format(date, 'E')}</div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* Month labels */}
-            <div className="flex mb-2">
-              <div className="w-40 flex-shrink-0"></div>
-              <div className="flex space-x-1">
+          <div className="min-w-max">
+            {/* Date header */}
+            <div className="flex">
+              <div className="w-44 flex-shrink-0" />
+              <div className="flex gap-1">
                 {dates.map((date, index) => {
                   const showMonth = index === 0 || format(date, 'dd') === '01';
                   return (
-                    <div key={index} className={`w-8 h-4 flex items-center justify-center ${isToday(date) ? 'bg-yellow-100 rounded-md' : ''}`}>
-                      {showMonth && (
-                        <div className={`text-xs font-medium ${isToday(date) ? 'text-yellow-800' : 'text-gray-500'}`}>
-                          {format(date, 'MMM')}
-                        </div>
-                      )}
+                    <div key={index} className="w-8 text-center">
+                      <div className="h-4 text-[10px] font-semibold uppercase tracking-wide text-gray-400">
+                        {showMonth ? format(date, 'MMM') : ''}
+                      </div>
+                      <div
+                        className={`mt-0.5 rounded-md py-1 text-xs ${
+                          isToday(date)
+                            ? 'bg-primary-100 font-bold text-primary-700'
+                            : isWeekend(date)
+                            ? 'text-gray-300'
+                            : 'text-gray-500'
+                        }`}
+                      >
+                        <div className="font-semibold leading-none">{format(date, 'd')}</div>
+                        <div className="text-[10px] leading-none">{format(date, 'EEEEE')}</div>
+                      </div>
                     </div>
                   );
                 })}
               </div>
             </div>
 
-            {/* Developer rows */}
-            {users.map((user) => (
-              <div key={user.id} className="flex items-center mb-2">
-                <div className="w-40 flex-shrink-0 font-medium text-gray-900 py-2">
-                  {user.name}
-                  <div className="text-xs text-gray-500">{user.role}</div>
+            {/* Member rows */}
+            <div className="mt-3 space-y-1">
+              {users.map((user) => (
+                <div
+                  key={user.id}
+                  className="flex items-center rounded-lg py-1 hover:bg-gray-50"
+                >
+                  <div className="w-44 flex-shrink-0 pr-3">
+                    <div className="truncate text-sm font-medium text-gray-900">{user.name}</div>
+                    <div className="text-[11px] uppercase tracking-wide text-gray-400">
+                      {user.role.replace('_', ' ')}
+                    </div>
+                  </div>
+                  <div className="flex gap-1">
+                    {dates.map((date, index) => {
+                      const dayInfo = getDayInfo(user, date);
+                      const away = !!dayInfo.timeOff;
+                      const base =
+                        'h-8 w-8 rounded-md border transition-colors';
+                      const style = away
+                        ? 'bg-away-400 border-away-500'
+                        : dayInfo.isWeekend
+                        ? 'bg-gray-100 border-gray-200'
+                        : 'bg-white border-gray-200 hover:border-gray-300';
+                      const todayRing = isToday(date) ? ' ring-2 ring-primary-400 ring-offset-1' : '';
+                      return (
+                        <div
+                          key={index}
+                          className={`${base} ${style}${todayRing}`}
+                          title={getSquareTooltip(user, dayInfo)}
+                        />
+                      );
+                    })}
+                  </div>
                 </div>
-                <div className="flex space-x-1">
-                  {dates.map((date, index) => {
-                    const dayInfo = getDayInfo(user, date);
-                    const squareColor = getSquareColor(dayInfo);
-                    const tooltip = getSquareTooltip(user, dayInfo);
-                    
-                    return (
-                      <div
-                        key={index}
-                        className={`w-8 h-8 border rounded ${squareColor} cursor-pointer hover:opacity-80 transition-opacity ${
-                          isToday(date) ? 'ring-2 ring-yellow-400 ring-opacity-60' : ''
-                        }`}
-                        {...(state.user?.role === 'ADMIN' || state.user?.role === 'MANAGER' ? { title: tooltip } : {})}
-                      >
-                        {dayInfo.timeOff && (
-                          <div className="w-full h-full flex items-center justify-center">
-                            <div className="w-2 h-2 bg-white rounded-full opacity-80"></div>
-                          </div>
-                        )}
-                      </div>
-                    );
-                  })}
+              ))}
+
+              {users.length === 0 && (
+                <div className="py-12 text-center text-sm text-gray-400">
+                  No team members to show yet.
                 </div>
-              </div>
-            ))}
+              )}
+            </div>
           </div>
         </div>
       </div>
 
       {/* Legend */}
-      <div className="card">
-        <div className="card-header">
-          <h3 className="text-lg font-medium text-gray-900">Legend</h3>
-        </div>
-        <div className="card-body">
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-            <div className="flex items-center space-x-2">
-              <div className="w-6 h-6 bg-white border border-gray-300 rounded"></div>
-              <span className="text-sm">Working Day</span>
-            </div>
-            <div className="flex items-center space-x-2">
-              <div className="w-6 h-6 bg-gray-200 rounded"></div>
-              <span className="text-sm">Weekend</span>
-            </div>
-            <div className="flex items-center space-x-2">
-              <div className="w-6 h-6 bg-blue-400 rounded"></div>
-              <span className="text-sm">Absent</span>
-            </div>
-          </div>
-          <div className="mt-4 text-sm text-gray-600">
-            <p>• Each square represents one day for a developer</p>
-            <p>• Hover over squares to see detailed information</p>
-            <p>• White dots indicate approved time-off requests</p>
-            <p>• Only approved time-off requests are shown</p>
-          </div>
-        </div>
+      <div className="flex flex-wrap items-center gap-x-6 gap-y-2 text-sm text-gray-500">
+        <span className="flex items-center gap-2">
+          <span className="h-4 w-4 rounded border border-gray-200 bg-white" /> Working day
+        </span>
+        <span className="flex items-center gap-2">
+          <span className="h-4 w-4 rounded border border-gray-200 bg-gray-100" /> Weekend
+        </span>
+        <span className="flex items-center gap-2">
+          <span className="h-4 w-4 rounded border border-away-500 bg-away-400" /> Away
+        </span>
+        <span className="flex items-center gap-2">
+          <span className="h-4 w-4 rounded ring-2 ring-primary-400" /> Today
+        </span>
       </div>
     </div>
   );

@@ -1,21 +1,3 @@
-/*
- * Team Management System
- * Copyright (C) 2025
- * 
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- * 
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <https://www.gnu.org/licenses/>.
- */
-
 import React, { useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { useNavigate, Link } from 'react-router-dom';
@@ -30,6 +12,7 @@ import {
   CalendarIcon 
 } from '@heroicons/react/24/outline';
 import ChangePasswordModal from '../ChangePasswordModal';
+import BrandMark from '../BrandMark';
 
 const Navbar: React.FC = () => {
   const { state, logout } = useAuth();
@@ -75,21 +58,21 @@ const Navbar: React.FC = () => {
 
   return (
     <>
-      <nav className="bg-white shadow">
+      <nav className="bg-white/90 backdrop-blur border-b border-gray-200 sticky top-0 z-30">
         <div className="container">
           <div className="flex justify-between h-16">
           <div className="flex">
             <div className="flex-shrink-0 flex items-center">
-              <Link to="/holiday-calendar" className="text-xl font-bold text-gray-800">
-                Team Manager
+              <Link to="/holiday-calendar" aria-label="Holiday Planner home">
+                <BrandMark />
               </Link>
             </div>
-            <div className="hidden sm:ml-6 sm:flex sm:space-x-8">
+            <div className="hidden sm:ml-8 sm:flex sm:space-x-6">
               {navigationItems.map((item) => (
                 <Link
                   key={item.name}
                   to={item.href}
-                  className="inline-flex items-center px-1 pt-1 border-b-2 border-transparent text-sm font-medium text-gray-500 hover:text-gray-700 hover:border-gray-300"
+                  className="inline-flex items-center px-1 pt-1 border-b-2 border-transparent text-sm font-medium text-gray-500 hover:text-primary-700 hover:border-primary-400 transition-colors"
                 >
                   <item.icon className="w-4 h-4 mr-2" />
                   {item.name}

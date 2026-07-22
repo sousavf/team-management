@@ -1,21 +1,3 @@
-/*
- * Team Management System
- * Copyright (C) 2025
- * 
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- * 
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <https://www.gnu.org/licenses/>.
- */
-
 import express from 'express';
 import { authenticate, authorize, AuthRequest } from '../middleware/auth';
 import { PrismaClient } from '@prisma/client';
@@ -41,6 +23,51 @@ router.get('/dashboard/pending-count', async (req, res) => {
     });
     res.json({ count: pendingCount });
   } catch (error) {
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// Public calendar endpoint - approved absences for the logged-out calendar.
+// Exposes only who is away and when: no leave type, reason, or email.
+router.get('/calendar/public', async (req, res) => {
+  try {
+    const { startDate, endDate } = req.query;
+
+    const whereClause: any = { status: 'APPROVED' };
+
+    if (startDate || endDate) {
+      whereClause.OR = [
+        {
+          startDate: {
+            gte: startDate ? new Date(startDate as string) : undefined,
+            lte: endDate ? new Date(endDate as string) : undefined
+          }
+        },
+        {
+          endDate: {
+            gte: startDate ? new Date(startDate as string) : undefined,
+            lte: endDate ? new Date(endDate as string) : undefined
+          }
+        }
+      ];
+    }
+
+    const requests = await prisma.timeOffRequest.findMany({
+      where: whereClause,
+      select: {
+        id: true,
+        userId: true,
+        startDate: true,
+        endDate: true,
+        status: true,
+        user: { select: { id: true, name: true, role: true } }
+      },
+      orderBy: { startDate: 'asc' }
+    });
+
+    res.json(requests);
+  } catch (error) {
+    console.error(error);
     res.status(500).json({ error: 'Server error' });
   }
 });

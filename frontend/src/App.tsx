@@ -1,27 +1,11 @@
-/*
- * Team Management System
- * Copyright (C) 2025
- * 
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- * 
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <https://www.gnu.org/licenses/>.
- */
-
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
 import ProtectedRoute from './components/ProtectedRoute';
 import Layout from './components/Layout/Layout';
 import Login from './pages/Login';
+import ForgotPassword from './pages/ForgotPassword';
+import ResetPassword from './pages/ResetPassword';
 import Dashboard from './pages/Dashboard';
 import Capacity from './pages/Capacity';
 import TimeOff from './pages/TimeOff';
@@ -34,7 +18,18 @@ function App() {
       <Router>
         <Routes>
           <Route path="/login" element={<Login />} />
+          <Route path="/forgot-password" element={<ForgotPassword />} />
+          <Route path="/reset-password" element={<ResetPassword />} />
           <Route path="/" element={<Navigate to="/holiday-calendar" replace />} />
+          {/* Public: anyone can view team availability without signing in. */}
+          <Route
+            path="/holiday-calendar"
+            element={
+              <Layout>
+                <HolidayCalendar />
+              </Layout>
+            }
+          />
           <Route
             path="/dashboard"
             element={
@@ -59,16 +54,6 @@ function App() {
               <ProtectedRoute requiredRole={['ADMIN', 'MANAGER', 'DEVELOPER', 'QA_MANAGER', 'TESTER']}>
                 <Layout>
                   <TimeOff />
-                </Layout>
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/holiday-calendar"
-            element={
-              <ProtectedRoute>
-                <Layout>
-                  <HolidayCalendar />
                 </Layout>
               </ProtectedRoute>
             }
