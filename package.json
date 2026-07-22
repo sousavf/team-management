@@ -1,7 +1,7 @@
 {
-  "name": "team-management-app",
-  "version": "1.1.0",
-  "description": "Software development team management application",
+  "name": "holiday-planner",
+  "version": "1.6.0",
+  "description": "Holiday planning application for teams",
   "main": "index.js",
   "scripts": {
     "dev": "concurrently \"npm run dev:backend\" \"npm run dev:frontend\"",

@@ -1,6 +1,6 @@
-# Team Management Application
+# Holiday Planner
 
-A comprehensive web application for managing software development teams, built with modern technologies and fully containerized with Docker.
+A web application for planning team time off and seeing who's away at a glance. Built with modern technologies and fully containerized with Docker.
 
 If you like this software, feel free to [buy me a coffee](https://coff.ee/sousavf).
 
@@ -32,6 +32,12 @@ If you like this software, feel free to [buy me a coffee](https://coff.ee/sousav
 - User profile management
 - Team member directory
 - Secure authentication with JWT tokens
+- Self-service password recovery via email
+
+### 🌐 Public Calendar
+- View team availability without signing in
+- Shows who's away and when — leave type and reasons stay private
+- Sign in to request or manage time off
 
 ### 📊 Analytics & Reporting
 - Team capacity dashboard with visual charts
@@ -130,10 +136,12 @@ npm run db:seed
 
 ### Authentication
 - `POST /api/auth/login` - User login
-- `POST /api/auth/register` - User registration
+- `POST /api/auth/forgot-password` - Request a password-reset email
+- `POST /api/auth/reset-password` - Set a new password using a reset token
 
 ### Users
 - `GET /api/users` - Get all users
+- `GET /api/users/public` - Public roster for the logged-out calendar
 - `GET /api/users/me` - Get current user
 - `POST /api/users` - Create user (Admin/Manager)
 - `PUT /api/users/:id` - Update user (Admin/Manager)
@@ -146,6 +154,7 @@ npm run db:seed
 
 ### Time Off
 - `GET /api/time-off` - Get time-off requests
+- `GET /api/time-off/calendar/public` - Approved absences for the public calendar
 - `POST /api/time-off` - Create time-off request
 - `PUT /api/time-off/:id` - Approve/reject request (Manager/Admin)
 - `DELETE /api/time-off/:id` - Delete request
@@ -154,13 +163,25 @@ npm run db:seed
 
 ### Environment Variables
 
-**Backend (.env)**:
+**Backend (.env)** — see `.env.example` for the full list:
 ```
-DATABASE_URL=postgresql://postgres:password@localhost:5432/team_management
+DATABASE_URL=postgresql://postgres:password@localhost:5432/holiday_planner
 JWT_SECRET=your-super-secret-jwt-key-change-this-in-production
 PORT=3501
 NODE_ENV=development
 PACE_FACTOR=0.8
+
+# Used to build password-reset links in emails
+FRONTEND_URL=http://localhost:3500
+
+# SMTP — required for time-off notifications and password-reset emails
+EMAIL_NOTIFICATIONS_ENABLED=true
+SMTP_HOST=smtp.example.com
+SMTP_PORT=587
+SMTP_USER=your-smtp-username
+SMTP_PASSWORD=your-smtp-password
+SMTP_FROM_NAME=Holiday Planner
+SMTP_FROM_EMAIL=noreply@example.com
 ```
 
 **Frontend**:
