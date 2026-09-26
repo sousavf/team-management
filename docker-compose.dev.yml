@@ -4,7 +4,7 @@ services:
     environment:
       POSTGRES_DB: team_management
       POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: password
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}
     volumes:
       - postgres_data:/var/lib/postgresql/data
     ports:
@@ -20,8 +20,8 @@ services:
       context: ./backend
       dockerfile: Dockerfile.dev
     environment:
-      DATABASE_URL: "postgresql://postgres:password@db:5432/team_management"
-      JWT_SECRET: "your-super-secret-jwt-key-change-this-in-production"
+      DATABASE_URL: ${DATABASE_URL:?Set DATABASE_URL in .env}
+      JWT_SECRET: ${JWT_SECRET:?Set JWT_SECRET in .env}
       PORT: 3501
       NODE_ENV: development
       PACE_FACTOR: 0.8
